@@ -1,9 +1,9 @@
-[[s2i-wordpress-image]]
-= Go Docker images
+[[s2i-wordpress-images]]
+= Wordpress Docker images
 
 This repository contains the source for creating a
 https://github.com/openshift/source-to-image[source-to-image] builder image,
-which can be used to create reproducible Docker images with Wordpress[https://wordpress.org].
+which can be used to create reproducible Docker images with https://wordpress.org[Wordpress]
 
 For more information about using these images with OpenShift, please see
 the official
@@ -16,7 +16,6 @@ Documentation].
 Wordpress versions currently supported are:
 
 * Wordpress 4.5
-
 
 [[copyright-license]]
 Copyright and License
