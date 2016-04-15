@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Execute original assemble script here. Any file put into GIT repository will
+# be copied into wordpress directory, so you can use this to override existing
+# wordpress files.
+#
+
+# Copy the version of wordpress from the image first
+(cd /opt/app-root/src && cp -Rf /opt/app-root/wordpress/. ./)
+
+${STI_SCRIPTS_PATH}/assemble-base

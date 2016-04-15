@@ -1,0 +1,51 @@
+#!/bin/bash
+
+readonly WP_BASE_DIR=/opt/app-root/src
+
+# The wp-content directory is empty, which means we run Wordpress for the first
+# time or we run wordpress on ephemeral volume.
+# We copy the original installation files in that case.
+if [ ! "$(ls -A /opt/app-root/wp-content)" ]; then
+  echo "-> Installing base Wordpress plugins and themes ..."
+  cp -R ${WP_BASE_DIR}/wp-content-install/* /opt/app-root/wp-content/
+fi
+
+if [ "$(ls -A /opt/app-root/src/wp-content)" ]; then
+  echo "-> Installing provided user content ..."
+  cp -fR ${WP_BASE_DIR}/wp-content/* /opt/app-root/wp-content/
+fi
+
+echo "-> Linking './wp-content' to persistent volume ..."
+rm -rf ${WP_BASE_DIR}/wp-content
+ln -sf /opt/app-root/wp-content ${WP_BASE_DIR}/wp-content
+
+# Do nothing if user provided custom configuration file
+# If not, generate one.
+if [ ! -f ${WP_BASE_DIR}/wp-config.php ]; then
+  # Check all required variable
+  [[ -z "${MYSQL_DATABASE}" ]]     && echo "The MYSQL_DATABASE variable must be set." && exit 1
+  [[ -z "${MYSQL_USER}" ]]         && echo "The MYSQL_USER variable must be set." && exit 1
+  [[ -z "${MYSQL_PASSWORD}" ]]     && echo "The MYSQL_PASSWORD variable must be set." && exit 1
+  [[ -z "${MYSQL_SERVICE_HOST}" ]] && echo "The MYSQL_SERVICE_HOST variable must be set." && exit 1
+  { \
+    echo "<?php";
+    echo "define('DB_NAME',     getenv('MYSQL_DATABASE'));";
+    echo "define('DB_USER',     getenv('MYSQL_USER'));";
+    echo "define('DB_PASSWORD', getenv('MYSQL_PASSWORD'));";
+    echo "define('DB_HOST',     getenv('MYSQL_SERVICE_HOST'));";
+    echo "define('DB_CHARSET',  'utf8');";
+    echo "define('DB_COLLATE',  '');";
+  } > /tmp/wp-config.php
+
+  # Generate unique keys and salts
+  echo "-> Generating unique keys and salts (this will cause all users to logout) ..."
+  curl -s https://api.wordpress.org/secret-key/1.1/salt/ >> /tmp/wp-config.php
+
+  # Completize configuration
+  cat wp-config.php.template >> /tmp/wp-config.php
+  echo "-> Generated new wp-config.php file ..."
+  mv /tmp/wp-config.php /opt/app-root/src/wp-config.php
+fi
+
+echo -e "-> Wordpress is now configured!\n"
+exec ${STI_SCRIPTS_PATH}/run-base
