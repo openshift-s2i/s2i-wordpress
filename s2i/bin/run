@@ -23,23 +23,23 @@ ln -sf /opt/app-root/wp-content ${WP_BASE_DIR}/wp-content
 # If not, generate one.
 if [ ! -f ${WP_BASE_DIR}/wp-config.php ]; then
   # Check all required variable
-  [[ -z "${MYSQL_DATABASE}" ]]     && echo "The MYSQL_DATABASE variable must be set." && exit 1
-  [[ -z "${MYSQL_USER}" ]]         && echo "The MYSQL_USER variable must be set." && exit 1
-  [[ -z "${MYSQL_PASSWORD}" ]]     && echo "The MYSQL_PASSWORD variable must be set." && exit 1
-  [[ -z "${MYSQL_SERVICE_HOST}" ]] && echo "The MYSQL_SERVICE_HOST variable must be set." && exit 1
+  [[ -z "${WORDPRESS_DB_NAME}" ]]     && echo "The WORDPRESS_DB_NAME variable must be set." && exit 1
+  [[ -z "${WORDPRESS_DB_USER}" ]]         && echo "The WORDPRESS_DB_USER variable must be set." && exit 1
+  [[ -z "${WORDPRESS_DB_PASSWORD}" ]]     && echo "The WORDPRESS_DB_PASSWORD variable must be set." && exit 1
+  [[ -z "${WORDPRESS_DB_HOST}" ]] && echo "The WORDPRESS_DB_HOST variable must be set." && exit 1
   { \
     echo "<?php";
-    echo "define('DB_NAME',     getenv('MYSQL_DATABASE'));";
-    echo "define('DB_USER',     getenv('MYSQL_USER'));";
-    echo "define('DB_PASSWORD', getenv('MYSQL_PASSWORD'));";
-    echo "define('DB_HOST',     getenv('MYSQL_SERVICE_HOST'));";
+    echo "define('DB_NAME',     getenv('WORDPRESS_DB_NAME'));";
+    echo "define('DB_USER',     getenv('WORDPRESS_DB_USER'));";
+    echo "define('DB_PASSWORD', getenv('WORDPRESS_DB_PASSWORD'));";
+    echo "define('DB_HOST',     getenv('WORDPRESS_DB_HOST'));";
     echo "define('DB_CHARSET',  'utf8');";
     echo "define('DB_COLLATE',  '');";
   } > /tmp/wp-config.php
 
   # Generate unique keys and salts
-  echo "-> Generating unique keys and salts (this will cause all users to logout) ..."
-  curl -s https://api.wordpress.org/secret-key/1.1/salt/ >> /tmp/wp-config.php
+  #echo "-> Generating unique keys and salts (this will cause all users to logout) ..."
+  #curl -s https://api.wordpress.org/secret-key/1.1/salt/ >> /tmp/wp-config.php
 
   # Completize configuration
   cat wp-config.php.template >> /tmp/wp-config.php

@@ -1,294 +1,451 @@
-apiVersion: v1
+---
 kind: Template
+apiVersion: v1
 metadata:
-  creationTimestamp: null
-  name: wordpress
+  name: wordpress-mysql-persistent
+  annotations:
+    openshift.io/display-name: Wordpress 4.7 + MySQL (Persistent)
+    description: Wordpress 4.7 application with a persistent MySQL database. For more information
+      about using this template, including OpenShift considerations, see https://github.com/DagensNyheter/wordpress-quickstart/blob/master/README.md.
+    tags: quickstart,php,wordpress
+    iconClass: icon-php
+    template.openshift.io/long-description: This template defines resources needed
+      to develop a wordpress application, including a build configuration, application
+      deployment configuration, and database deployment configuration.
+    template.openshift.io/provider-display-name: Red Hat, Inc.
+    template.openshift.io/documentation-url: https://github.com/DagensNyheter/wordpress-quickstart
+    template.openshift.io/support-url: https://github.com/DagensNyheter/wordpress-quickstart
+message: |-
+  The following service(s) have been created in your project: ${NAME}, ${DATABASE_SERVICE_NAME}.
+
+  For more information about using this template, including OpenShift considerations, see https://github.com/DagensNyheter/wordpress-quickstart/blob/master/README.md.
+labels:
+  template: wordpress-mysql-persistent
 objects:
-- apiVersion: v1
-  kind: Service
+- kind: Secret
+  apiVersion: v1
   metadata:
-    creationTimestamp: null
-    labels:
-      template: mysql-ephemeral-template
-    name: mysql
+    name: "${NAME}"
+  stringData:
+    database-user: "${DATABASE_USER}"
+    database-password: "${DATABASE_PASSWORD}"
+    wordpress-auth-key: "${WORDPRESS_AUTH_KEY}"
+    wordpress-secure-auth-key: "${WORDPRESS_SECURE_AUTH_KEY}"
+    wordpress-logged-in-key: "${WORDPRESS_LOGGED_IN_KEY}"
+    wordpress-nonce-key: "${WORDPRESS_NONCE_KEY}"
+    wordpress-auth-salt: "${WORDPRESS_AUTH_SALT}"
+    wordpress-secure-auth-salt: "${WORDPRESS_SECURE_AUTH_SALT}"
+    wordpress-logged-in-salt: "${WORDPRESS_LOGGED_IN_SALT}"
+    wordpress-nonce-salt: "${WORDPRESS_NONCE_SALT}"
+    k8s-probe: "${K8S_PROBE}"
+
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: "${NAME}"
+    annotations:
+      description: Exposes and load balances the application pods
+      service.alpha.openshift.io/dependencies: '[{"name": "${DATABASE_SERVICE_NAME}",
+        "kind": "Service"}]'
+  spec:
+    ports:
+    - name: wordpress
+      port: 8080
+      targetPort: 8080
+    selector:
+      name: "${NAME}"
+- kind: Route
+  apiVersion: v1
+  metadata:
+    name: "${NAME}"
+  spec:
+    host: "${APPLICATION_DOMAIN}"
+    to:
+      kind: Service
+      name: "${NAME}"
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: "${NAME}"
+    annotations:
+      description: Keeps track of changes in the application image
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    name: "${NAME}"
+    annotations:
+      description: Defines how to build the application
+  spec:
+    source:
+      type: Git
+      git:
+        uri: "${SOURCE_REPOSITORY_URL}"
+        ref: "${SOURCE_REPOSITORY_REF}"
+      contextDir: "${CONTEXT_DIR}"
+    strategy:
+      type: Source
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          namespace: "${NAMESPACE}"
+          name: wordpress:4.7
+    output:
+      to:
+        kind: ImageStreamTag
+        name: "${NAME}:latest"
+    triggers:
+    - type: ImageChange
+    - type: ConfigChange
+    - type: GitHub
+      github:
+        secret: "${GITHUB_WEBHOOK_SECRET}"
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: "${NAME}"
+    annotations:
+      description: Defines how to deploy Wordpress
+  spec:
+    strategy:
+      type: Rolling
+    triggers:
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+        - wordpress
+        from:
+          kind: ImageStreamTag
+          name: "${NAME}:latest"
+    - type: ConfigChange
+    replicas: 1
+    selector:
+      name: "${NAME}"
+    template:
+      metadata:
+        name: "${NAME}"
+        labels:
+          name: "${NAME}"
+      spec:
+        volumes:
+        - name: "${NAME}-data"
+          persistentVolumeClaim:
+            claimName: "${NAME}-wp-content"
+        containers:
+        - name: wordpress
+          image: " "
+          ports:
+          - containerPort: 8080
+          volumeMounts:
+          - name: "${NAME}-data"
+            mountPath: "/opt/app-root/wp-content"
+          readinessProbe:
+            timeoutSeconds: 3
+            initialDelaySeconds: 3
+            httpGet:
+              path: "/health.php"
+              httpHeaders:
+                - name: X-K8S-PROBE
+                  value: "${K8S_PROBE}"
+              port: 8080
+          livenessProbe:
+            timeoutSeconds: 3
+            initialDelaySeconds: 30
+            httpGet:
+              path: "/health.php"
+              httpHeaders:
+                - name: X-K8S-PROBE
+                  value: "${K8S_PROBE}"
+              port: 8080
+          env:
+          - name: WORDPRESS_DB_HOST
+            value: "${DATABASE_SERVICE_NAME}"
+          - name: DATABASE_ENGINE
+            value: "${DATABASE_ENGINE}"
+          - name: WORDPRESS_DB_NAME
+            value: "${DATABASE_NAME}"
+          - name: WORDPRESS_DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: "${NAME}"
+                key: database-user
+          - name: WORDPRESS_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: "${NAME}"
+                key: database-password
+          - name: WORDPRESS_AUTH_KEY
+            valueFrom:
+              secretKeyRef:
+                name: "${NAME}"
+                key: wordpress-auth-key
+          - name: WORDPRESS_SECURE_AUTH_KEY
+            valueFrom:
+              secretKeyRef:
+                name: "${NAME}"
+                key: wordpress-secure-auth-key
+          - name: WORDPRESS_LOGGED_IN_KEY
+            valueFrom:
+              secretKeyRef:
+                name: "${NAME}"
+                key: wordpress-logged-in-key
+          - name: WORDPRESS_NONCE_KEY
+            valueFrom:
+              secretKeyRef:
+                name: "${NAME}"
+                key: wordpress-nonce-key
+          - name: WORDPRESS_AUTH_SALT
+            valueFrom:
+              secretKeyRef:
+                name: "${NAME}"
+                key: wordpress-auth-salt
+          - name: WORDPRESS_SECURE_AUTH_SALT
+            valueFrom:
+              secretKeyRef:
+                name: "${NAME}"
+                key: wordpress-secure-auth-salt
+          - name: WORDPRESS_LOGGED_IN_SALT
+            valueFrom:
+              secretKeyRef:
+                name: "${NAME}"
+                key: wordpress-logged-in-salt
+          - name: WORDPRESS_NONCE_SALT
+            valueFrom:
+              secretKeyRef:
+                name: "${NAME}"
+                key: wordpress-nonce-salt
+          - name: K8S_PROBE
+            valueFrom:
+              secretKeyRef:
+                name: "${NAME}"
+                key: k8s-probe
+          - name: OPCACHE_REVALIDATE_FREQ
+            value: "${OPCACHE_REVALIDATE_FREQ}"
+          resources:
+            limits:
+              memory: "${MEMORY_LIMIT}"
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: "${DATABASE_SERVICE_NAME}"
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: "${VOLUME_CAPACITY}"
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: "${NAME}-wp-content"
+  spec:
+    accessModes:
+    - ReadWriteMany
+    resources:
+      requests:
+        storage: "${WORDPRESS_VOLUME_CAPACITY}"
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: "${DATABASE_SERVICE_NAME}"
+    annotations:
+      description: Exposes the database server
   spec:
     ports:
     - name: mysql
       port: 3306
-      protocol: TCP
       targetPort: 3306
     selector:
-      name: mysql
-    sessionAffinity: None
-    type: ClusterIP
-  status:
-    loadBalancer: {}
-- apiVersion: v1
-  kind: Service
+      name: "${DATABASE_SERVICE_NAME}"
+- kind: DeploymentConfig
+  apiVersion: v1
   metadata:
+    name: "${DATABASE_SERVICE_NAME}"
     annotations:
-      openshift.io/generated-by: OpenShiftNewApp
-    creationTimestamp: null
-    labels:
-      app: wordpress-frontend
-    name: wordpress-frontend
+      description: Defines how to deploy the database
   spec:
-    ports:
-    - name: 8080-tcp
-      port: 8080
-      protocol: TCP
-      targetPort: 8080
-    selector:
-      app: wordpress-frontend
-      deploymentconfig: wordpress-frontend
-    sessionAffinity: None
-    type: ClusterIP
-  status:
-    loadBalancer: {}
-- apiVersion: v1
-  kind: ImageStream
-  metadata:
-    annotations:
-    labels:
-      app: wordpress-frontend
-    name: wordpress
-  spec:
-    dockerImageRepository: docker.io/mfojtik/wordpress
-- apiVersion: v1
-  kind: ImageStream
-  metadata:
-    labels:
-      app: wordpress-frontend
-    name: wordpress-frontend
-- apiVersion: v1
-  kind: BuildConfig
-  metadata:
-    creationTimestamp: null
-    labels:
-      app: wordpress-frontend
-    name: wordpress-frontend
-  spec:
-    output:
-      to:
-        kind: ImageStreamTag
-        name: wordpress-frontend:latest
-    postCommit: {}
-    resources: {}
-    source:
-      git:
-        uri: ${SITE_REPOSITORY}
-      secrets: []
-      type: Git
     strategy:
-      sourceStrategy:
-        from:
-          kind: ImageStreamTag
-          name: wordpress:latest
-      type: Source
-    triggers:
-    - github:
-        secret: TcaowunWDfKGNFWPRQP6
-      type: GitHub
-    - generic:
-        secret: 9FcerQuhlnRNl5etEr3l
-      type: Generic
-    - type: ConfigChange
-    - imageChange: {}
-      type: ImageChange
-  status:
-    lastVersion: 0
-- apiVersion: v1
-  kind: DeploymentConfig
-  metadata:
-    creationTimestamp: null
-    labels:
-      template: mysql-ephemeral-template
-    name: mysql
-  spec:
-    replicas: 1
-    selector:
-      name: mysql
-    strategy:
-      recreateParams:
-        timeoutSeconds: 600
-      resources: {}
       type: Recreate
-    template:
-      metadata:
-        creationTimestamp: null
-        labels:
-          name: mysql
-      spec:
-        containers:
-        - env:
-          - name: MYSQL_USER
-            value: ${MYSQL_USER}
-          - name: MYSQL_PASSWORD
-            value: ${MYSQL_PASSWORD}
-          - name: MYSQL_DATABASE
-            value: ${MYSQL_DATABASE}
-          image: centos/mysql-56-centos7
-          imagePullPolicy: IfNotPresent
-          livenessProbe:
-            failureThreshold: 3
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            successThreshold: 1
-            tcpSocket:
-              port: 3306
-            timeoutSeconds: 1
-          name: mysql
-          ports:
-          - containerPort: 3306
-            protocol: TCP
-          readinessProbe:
-            exec:
-              command:
-              - /bin/sh
-              - -i
-              - -c
-              - MYSQL_PWD="$MYSQL_PASSWORD" mysql -h 127.0.0.1 -u $MYSQL_USER -D $MYSQL_DATABASE
-                -e 'SELECT 1'
-            failureThreshold: 3
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 1
-          resources:
-            limits:
-              memory: 512Mi
-          securityContext:
-            capabilities: {}
-            privileged: false
-          terminationMessagePath: /dev/termination-log
-          volumeMounts:
-          - mountPath: /var/lib/mysql/data
-            name: mysql-data
-        dnsPolicy: ClusterFirst
-        restartPolicy: Always
-        securityContext: {}
-        terminationGracePeriodSeconds: 30
-        volumes:
-        - emptyDir: {}
-          name: mysql-data
-    test: false
     triggers:
-    - imageChangeParams:
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
         containerNames:
         - mysql
         from:
           kind: ImageStreamTag
-          name: mysql:latest
-          namespace: openshift
-      type: ImageChange
+          namespace: "${NAMESPACE}"
+          name: mysql:5.7
     - type: ConfigChange
-  status: {}
-- apiVersion: v1
-  kind: DeploymentConfig
-  metadata:
-    creationTimestamp: null
-    labels:
-      app: wordpress-frontend
-    name: wordpress-frontend
-  spec:
     replicas: 1
     selector:
-      app: wordpress-frontend
-      deploymentconfig: wordpress-frontend
-    strategy:
-      resources: {}
-      rollingParams:
-        intervalSeconds: 1
-        maxSurge: 25%
-        maxUnavailable: 25%
-        timeoutSeconds: 600
-        updatePeriodSeconds: 1
-      type: Rolling
+      name: "${DATABASE_SERVICE_NAME}"
     template:
       metadata:
+        name: "${DATABASE_SERVICE_NAME}"
         labels:
-          app: wordpress-frontend
-          deploymentconfig: wordpress-frontend
+          name: "${DATABASE_SERVICE_NAME}"
       spec:
-        containers:
-        - env:
-          - name: MYSQL_USER
-            value: ${MYSQL_USER}
-          - name: MYSQL_PASSWORD
-            value: ${MYSQL_PASSWORD}
-          - name: MYSQL_DATABASE
-            value: ${MYSQL_DATABASE}
-          livenessProbe:
-            failureThreshold: 3
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            successThreshold: 1
-            httpGet:
-              path: "/"
-              port: 8080
-          readinessProbe:
-            failureThreshold: 3
-            initialDelaySeconds: 1
-            periodSeconds: 2
-            successThreshold: 1
-            timeoutSeconds: 1
-            httpGet:
-              path: "/"
-              port: 8080
-          image: wordpress-frontend
-          imagePullPolicy: Always
-          name: wordpress-frontend
-          ports:
-          - containerPort: 8080
-            protocol: TCP
-          resources: {}
-          terminationMessagePath: /dev/termination-log
-          volumeMounts:
-          - mountPath: /opt/app-root/wp-content
-            name: wordpress-frontend-volume-1
-        dnsPolicy: ClusterFirst
-        restartPolicy: Always
-        securityContext: {}
-        terminationGracePeriodSeconds: 30
         volumes:
-        - emptyDir: {}
-          name: wordpress-frontend-volume-1
-    test: false
-    triggers:
-    - type: ConfigChange
-    - imageChangeParams:
-        automatic: true
-        containerNames:
-        - wordpress-frontend
-        from:
-          kind: ImageStreamTag
-          name: wordpress-frontend:latest
-      type: ImageChange
-  status: {}
+        - name: "${DATABASE_SERVICE_NAME}-data"
+          persistentVolumeClaim:
+            claimName: "${DATABASE_SERVICE_NAME}"
+        containers:
+        - name: mysql
+          image: " "
+          ports:
+          - containerPort: 3306
+          volumeMounts:
+          - name: "${DATABASE_SERVICE_NAME}-data"
+            mountPath: "/var/lib/mysql/data"
+          readinessProbe:
+            timeoutSeconds: 1
+            initialDelaySeconds: 5
+            exec:
+              command:
+              - "/bin/sh"
+              - "-i"
+              - "-c"
+              - MYSQL_PWD='${DATABASE_PASSWORD}' mysql -h 127.0.0.1 -u ${DATABASE_USER}
+                -D ${DATABASE_NAME} -e 'SELECT 1'
+          livenessProbe:
+            timeoutSeconds: 1
+            initialDelaySeconds: 30
+            tcpSocket:
+              port: 3306
+          env:
+          - name: MYSQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: "${NAME}"
+                key: database-user
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: "${NAME}"
+                key: database-password
+          - name: MYSQL_DATABASE
+            value: "${DATABASE_NAME}"
+          resources:
+            limits:
+              memory: "${MEMORY_MYSQL_LIMIT}"
 parameters:
-- description: GIT repository with Wordpress customizations
-  displayName: User Wordpress GIT repository (can be empty repo)
-  name: SITE_REPOSITORY
-  value: 'https://github.com/mfojtik/wordpress-sample'
+- name: NAME
+  displayName: Name
+  description: The name assigned to all of the frontend objects defined in this template.
   required: true
-- description: Wordpress Docker image version to use
-  displayName: Wordpress version (use 'latest' for latest version)
-  name: WORDPRESS_VERSION
-  value: '4.5'
+  value: wordpress-mysql
+- name: NAMESPACE
+  displayName: Namespace
+  description: The OpenShift Namespace where the ImageStream resides.
   required: true
-- description: Database name
-  displayName: MySQL database name
-  name: MYSQL_DATABASE
-  value: wordpress
+  value: openshift
+- name: MEMORY_LIMIT
+  displayName: Memory Limit
+  description: Maximum amount of memory the wordpress container can use.
   required: true
-- description: Database user name
-  displayName: MySQL database user name
-  name: MYSQL_USER
-  value: wordpress
+  value: 512Mi
+- name: MEMORY_MYSQL_LIMIT
+  displayName: Memory Limit (MySQL)
+  description: Maximum amount of memory the MySQL container can use.
   required: true
-- description: Database user password
-  displayName: MySQL database user password
-  name: MYSQL_PASSWORD
-  from: '[a-zA-Z0-9]{16}'
+  value: 512Mi
+- name: VOLUME_CAPACITY
+  displayName: MySQL Volume Capacity
+  description: Volume space available for MySQL data, e.g. 512Mi, 2Gi
+  value: 5Gi
+  required: true
+- name: WORDPRESS_VOLUME_CAPACITY
+  displayName: Wordpress Volume Capacity
+  description: Volume space available for Wordpress data, e.g. 512Mi, 2Gi
+  value: 5Gi
+  required: true
+- name: SOURCE_REPOSITORY_URL
+  displayName: Git Repository URL
+  description: The URL of the repository with your application source code.
+  required: true
+  value: https://github.com/DagensNyheter/wordpress-quickstart.git
+- name: SOURCE_REPOSITORY_REF
+  displayName: Git Reference
+  description: Set this to a branch name, tag or other ref of your repository if you
+    are not using the default branch.
+- name: CONTEXT_DIR
+  displayName: Context Directory
+  description: Set this to the relative path to your project if it is not in the root
+    of your repository.
+- name: APPLICATION_DOMAIN
+  displayName: Application Hostname
+  description: The exposed hostname that will route to the wordpress service, if left
+    blank a value will be defaulted.
+  value: ''
+- name: GITHUB_WEBHOOK_SECRET
+  displayName: GitHub Webhook Secret
+  description: A secret string used to configure the GitHub webhook.
   generate: expression
+  from: "[a-zA-Z0-9]{40}"
+- name: DATABASE_SERVICE_NAME
+  displayName: Database Service Name
   required: true
+  value: mysql
+- name: DATABASE_ENGINE
+  displayName: Database Engine
+  description: 'Database engine: postgresql, mysql or sqlite (default).'
+  required: true
+  value: mysql
+- name: DATABASE_NAME
+  displayName: Database Name
+  required: true
+  value: wordpress
+- name: DATABASE_USER
+  displayName: Database User
+  required: true
+  value: wordpress
+- name: DATABASE_PASSWORD
+  displayName: Database Password
+  generate: expression
+  from: "[a-zA-Z0-9]{16}"
+- name: WORDPRESS_AUTH_KEY
+  displayName: Wordpress auth token
+  description: Set this to a long random string.
+  generate: expression
+  from: "[\\w]{50}"
+- name: WORDPRESS_SECURE_AUTH_KEY
+  displayName: Wordpress Secure Auth key
+  description: Set this to a long random string.
+  generate: expression
+  from: "[\\w]{50}"
+- name: WORDPRESS_NONCE_KEY
+  displayName: Wordpress Nonce Key
+  description: Set this to a long random string.
+  generate: expression
+  from: "[\\w]{50}"
+- name: WORDPRESS_AUTH_SALT
+  displayName: Wordpress Auth Salt
+  description: Set this to a long random string.
+  generate: expression
+  from: "[\\w]{50}"
+- name: WORDPRESS_SECURE_AUTH_SALT
+  displayName: Wordpress Secure Auth Salt
+  description: Set this to a long random string.
+  generate: expression
+  from: "[\\w]{50}"
+- name: WORDPRESS_LOGGED_IN_SALT
+  displayName: Wordpress Logged In Salt
+  description: Set this to a long random string.
+  generate: expression
+  from: "[\\w]{50}"
+- name: WORDPRESS_NONCE_SALT
+  displayName: Wordpress Nonce Salt
+  description: Set this to a long random string.
+  generate: expression
+  from: "[\\w]{50}"
+- name: K8S_PROBE
+  displayName: HTTP Header for probe
+  description: String used for HTTP Health probes.
+  generate: expression
+  from: "[a-zA-Z0-9]{16}"
+- name: OPCACHE_REVALIDATE_FREQ
+  displayName: OPcache Revalidation Frequency
+  description: How often to check script timestamps for updates, in seconds. 0 will
+    result in OPcache checking for updates on every request.
+  value: '2'
