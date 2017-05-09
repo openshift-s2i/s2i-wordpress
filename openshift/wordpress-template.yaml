@@ -412,6 +412,10 @@ parameters:
   displayName: Wordpress debug
   description: Enable wordpress debugging.
   value: "false"
+- name: WORDPRESS_TABLE_PREFIX
+  displayName: Wordpress table prefix
+  description: wordpress table prefix
+  value: "wp_"
 - name: WORDPRESS_MULTISITE
   displayName: Enable Wordpress multisite functionality
   description: Adds config to wp-config for multisite.

@@ -19,6 +19,7 @@ echo "-> Linking './wp-content' to persistent volume ..."
 rm -rf ${WP_BASE_DIR}/wp-content
 ln -sf /opt/app-root/wp-content ${WP_BASE_DIR}/wp-content
 
+WORDPRESS_TABLE_PREFIX=${WORDPRESS_TABLE_PREFIX:="wp_"}
 # Do nothing if user provided custom configuration file
 # If not, generate one.
 if [ ! -f ${WP_BASE_DIR}/wp-config.php ]; then
@@ -27,46 +28,35 @@ if [ ! -f ${WP_BASE_DIR}/wp-config.php ]; then
   [[ -z "${WORDPRESS_DB_USER}" ]]     && echo "The WORDPRESS_DB_USER variable must be set." && exit 1
   [[ -z "${WORDPRESS_DB_PASSWORD}" ]] && echo "The WORDPRESS_DB_PASSWORD variable must be set." && exit 1
   [[ -z "${WORDPRESS_DB_HOST}" ]]     && echo "The WORDPRESS_DB_HOST variable must be set." && exit 1
-  cat <<EOF >/tmp/wp-config.php
+  cat <<EOF > /tmp/wp-config.php
 <?php
-  define('DB_NAME',          getenv('WORDPRESS_DB_NAME'));
-  define('DB_USER',          getenv('WORDPRESS_DB_USER'));
-  define('DB_PASSWORD',      getenv('WORDPRESS_DB_PASSWORD'));
-  define('DB_HOST',          getenv('WORDPRESS_DB_HOST'));
-  define('DB_CHARSET',       'utf8');
-  define('DB_COLLATE',       '');
-  define('AUTH_KEY',         getenv('WORDPRESS_AUTH_KEY') ?: 'YWKs ?gNq0F>XR,QT!t+cWXnvOkjh+6&LdCU01-&%.W+(U$b>|4pFZ*@]Rb-sE71');
-  define('SECURE_AUTH_KEY',  getenv('WORDPRESS_SECURE_AUTH_KEY' ?: 'AL/<9=p;CyK!Aa1_oTi),a4N6-Xwo_bq{VU6d> x_&R&f<Tpo/!Y<owm+ZdC@pjk');
-  define('LOGGED_IN_KEY',    getenv('WORDPRESS_LOGGED_IN_KEY' ?: '>3ib4,g2XN4#B4+}%4ts+9S8|Fbn1`*7+up0iqPbL/@(M<`+|^!;Nl!GM9:|Z}c%');
-  define('NONCE_KEY',        getenv('WORDPRESS_NONCE_KEY' ?: 'OQYc+*)%S)Xt#AOyH]MS7PgQ%y`eK>TN7OM?xu|u?9Emg@Wac_XNlxm!Gy14Bm:X');
-  define('AUTH_SALT',        getenv('WORDPRESS_AUTH_SALT' ?: '[9f0#$`G*CG6-O9ftTY-(4Xu7;L-g&M3C>p%1!]Q_0s,g5:#v;Zr{1`G6]*_ty>^');
-  define('SECURE_AUTH_SALT', getenv('WORDPRESS_SECURE_AUTH_SALT' ?: '+SX4^0R-l6K qo]zc$=+R,|@*:5oC&SSQ2({=WZbw|Vo:BsGq399k-!RH$XeIDM-');
-  define('LOGGED_IN_SALT',   getenv('WORDPRESS_LOGGED_IN_SALT' ?: 'j, wFnc|ndz-?2&vPtgyrA[W6Q~nYsObrWKY{dx;-GExn$`.a$PAWf~t($8WI|E~');
-  define('NONCE_SALT',       getenv('WORDPRESS_NONCE_SALT' ?: 'cL1qCb2R1)!`JBf7$~B(F&)S4$$*R7|7Tt4T%t/YCDkWOOUP(6fhVusL~!@ky}?t');
-  * WordPress Database Table prefix.
-  *
-  * You can have multiple installations in one database if you give each a unique
-  * prefix. Only numbers, letters, and underscores please!
-  */
-  $table_prefix  = (getenv('WORDPRESS_TABLE_PREFIX') ?: 'wp_');
-  /**
-  * For developers: WordPress debugging mode.
-  *
-  * Change this to true to enable the display of notices during development.
-  * It is strongly recommended that plugin and theme developers use WP_DEBUG
-  * in their development environments.
-  */
-  define('WP_DEBUG', getenv('WORDPRESS_DEBUG') ?: false);
+define('DB_NAME',          getenv('WORDPRESS_DB_NAME'));
+define('DB_USER',          getenv('WORDPRESS_DB_USER'));
+define('DB_PASSWORD',      getenv('WORDPRESS_DB_PASSWORD'));
+define('DB_HOST',          getenv('WORDPRESS_DB_HOST'));
+define('DB_CHARSET',       'utf8');
+define('DB_COLLATE',       '');
+define('AUTH_KEY',         getenv('WORDPRESS_AUTH_KEY'));
+define('SECURE_AUTH_KEY',  getenv('WORDPRESS_SECURE_AUTH_KEY'));
+define('LOGGED_IN_KEY',    getenv('WORDPRESS_LOGGED_IN_KEY'));
+define('NONCE_KEY',        getenv('WORDPRESS_NONCE_KEY'));
+define('AUTH_SALT',        getenv('WORDPRESS_AUTH_SALT'));
+define('SECURE_AUTH_SALT', getenv('WORDPRESS_SECURE_AUTH_SALT'));
+define('LOGGED_IN_SALT',   getenv('WORDPRESS_LOGGED_IN_SALT'));
+define('NONCE_SALT',       getenv('WORDPRESS_NONCE_SALT'));
+
+\$table_prefix  = getenv('WORDPRESS_TABLE_PREFIX');
+define('WP_DEBUG', getenv('WORDPRESS_DEBUG'));
 EOF
 
   # multisite support
-  IS_MULTISITE=${WORDPRESS_MULTISITE:-false}
+  IS_MULTISITE=${WORDPRESS_MULTISITE:=false}
   if $IS_MULTISITE; then
-    cat <<EOF >>/tmp/wp-config.php
-  define(‘WP_ALLOW_MULTISITE’, true);
-  define( ‘MULTISITE’, true );
-  define( ‘SUBDOMAIN_INSTALL’, false );
-  define( ‘PATH_CURRENT_SITE’, ‘/’ );
+    cat <<EOF >> /tmp/wp-config.php
+define('WP_ALLOW_MULTISITE', true);
+define('MULTISITE', true );
+define('SUBDOMAIN_INSTALL', false );
+define('PATH_CURRENT_SITE', ‘/’ );
 EOF
   fi
 
