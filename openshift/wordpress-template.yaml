@@ -164,6 +164,10 @@ objects:
             value: "${DATABASE_ENGINE}"
           - name: WORDPRESS_DB_NAME
             value: "${DATABASE_NAME}"
+          - name: WORDPRESS_DEBUG
+            value: "${WORDPRESS_DEBUG}"
+          - name: WORDPRESS_MULTISITE
+            value: "${WORDPRESS_MULTISITE}"
           - name: WORDPRESS_DB_USER
             valueFrom:
               secretKeyRef:
@@ -404,6 +408,14 @@ parameters:
   displayName: Database Password
   generate: expression
   from: "[a-zA-Z0-9]{16}"
+- name: WORDPRESS_DEBUG
+  displayName: Wordpress debug
+  description: Enable wordpress debugging.
+  value: "false"
+- name: WORDPRESS_MULTISITE
+  displayName: Enable Wordpress multisite functionality
+  description: Adds config to wp-config for multisite.
+  value: "false"
 - name: WORDPRESS_AUTH_KEY
   displayName: Wordpress auth token
   description: Set this to a long random string.
