@@ -1,0 +1,47 @@
+---
+kind: ImageStreamList
+apiVersion: v1
+metadata: {}
+items:
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: wordpress
+  spec:
+    tags:
+    - name: '4.5'
+      annotations:
+        description: Build and run Wordpress 4.5
+        tags: builder,wordpress,php
+        supports: wordpress:4.5,wordpress
+        version: '4.5'
+        sampleRepo: https://github.com/BonnierNews/wordpress-quickstart
+      from:
+        kind: DockerImage
+        name: bonniernews/s2i-wordpress45:latest
+      importPolicy:
+        scheduled: true
+    - name: '4.6'
+      annotations:
+        description: Build and run Wordpress 4.6
+        tags: builder,wordpress,php
+        supports: wordpress:4.6,wordpress
+        version: '4.6'
+        sampleRepo: https://github.com/BonnierNews/wordpress-quickstart
+      from:
+        kind: DockerImage
+        name: bonniernews/s2i-wordpress46:latest
+      importPolicy:
+        scheduled: true
+    - name: '4.7'
+      annotations:
+        description: Build and run Wordpress 4.7
+        tags: builder,wordpress,php
+        supports: wordpress:4.7,wordpress
+        version: '4.7'
+        sampleRepo: https://github.com/BonnierNews/wordpress-quickstart
+      from:
+        kind: DockerImage
+        name: bonniernews/s2i-wordpress47:latest
+      importPolicy:
+        scheduled: true
