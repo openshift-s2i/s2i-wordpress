@@ -11,7 +11,5 @@ for version in ${VERSIONS}; do
     --label io.bonniernews.wordpress.version="${_version}" \
     --label io.bonniernews.wordpress.build.date="$(date +%c)" \
     --label io.bonniernews.wordpress.build.user="${USER}" .
-    docker push ${NAMESPACE}/${BASE_IMAGE_NAME}${_short_version}:${_version}
-    docker push ${NAMESPACE}/${BASE_IMAGE_NAME}${_short_version}:latest
 done
 
