@@ -1,4 +1,5 @@
 build = build/build.sh
+push = build/push.sh
 
 script_env = \
 	VERSIONS="$(VERSIONS)"                            \
@@ -11,6 +12,11 @@ script_env = \
 build:
 	$(script_env) $(build)
 
+.PHONY: push
+push:
+	$(script_env) $(push)
+
 .PHONY: all
 all:
 	build
+	push
