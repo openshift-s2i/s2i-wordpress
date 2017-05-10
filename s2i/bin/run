@@ -19,7 +19,19 @@ echo "-> Linking './wp-content' to persistent volume ..."
 rm -rf ${WP_BASE_DIR}/wp-content
 ln -sf /opt/app-root/wp-content ${WP_BASE_DIR}/wp-content
 
-WORDPRESS_TABLE_PREFIX=${WORDPRESS_TABLE_PREFIX:="wp_"}
+# Setup defaults
+export WORDPRESS_TABLE_PREFIX=${WORDPRESS_TABLE_PREFIX:-"wp_"}
+export WORDPRESS_DEBUG=${WORDPRESS_DEBUG:-"false"}
+export WORDPRESS_MULTISITE=${WORDPRESS_MULTISITE:-"false"}
+export WORDPRESS_AUTH_KEY=${WORDPRESS_AUTH_KEY:-"8kbs6rtoD2siI1gwk0laCcu6LSkN+Ja6QFeUMaX"}
+export WORDPRESS_SECURE_AUTH_KEY=${WORDPRESS_SECURE_AUTH_KEY:-"83kbs6rD2siI1gwk0laHSCcu6LSkN+Ja6QFeUMaX"}
+export WORDPRESS_LOGGED_IN_KEY=${WORDPRESS_LOGGED_IN_KEY:-"83kbs6rt2siI1gwk0laHSCcu6LSkN+Ja6QFeUMaX"}
+export WORDPRESS_NONCE_KEY=${WORDPRESS_NONCE_KEY:-"83kbs6rtoD2siI1gwk0laHSCcu6LSkN+Ja6eUMaX"}
+export WORDPRESS_AUTH_SALT=${WORDPRESS_AUTH_SALT:-"83kbs6rtoD2siI1gwk0laHSCcu6LSkN+Ja6QFeaX"}
+export WORDPRESS_SECURE_AUTH_SALT=${WORDPRESS_SECURE_AUTH_SALT:-"83kbs6rtoD2siI1gwk0laH6LSkN+Ja6QFeUMaX"}
+export WORDPRESS_LOGGED_IN_SALT=${WORDPRESS_LOGGED_IN_SALT:-"83kbs62siI1gwk0laHSCcu6LSkN+Ja6QFeUMaX"}
+export WORDPRESS_NONCE_SALT=${WORDPRESS_NONCE_SALT:-"83s6rtoD2siI1gwk0laHSC6LSkN+Ja6QFeUMaX"}
+
 # Do nothing if user provided custom configuration file
 # If not, generate one.
 if [ ! -f ${WP_BASE_DIR}/wp-config.php ]; then
@@ -45,18 +57,26 @@ define('SECURE_AUTH_SALT', getenv('WORDPRESS_SECURE_AUTH_SALT'));
 define('LOGGED_IN_SALT',   getenv('WORDPRESS_LOGGED_IN_SALT'));
 define('NONCE_SALT',       getenv('WORDPRESS_NONCE_SALT'));
 
-\$table_prefix  = getenv('WORDPRESS_TABLE_PREFIX');
-define('WP_DEBUG', getenv('WORDPRESS_DEBUG'));
+\$table_prefix  = '${WORDPRESS_TABLE_PREFIX}';
+define('WP_DEBUG', ${WORDPRESS_DEBUG});
 EOF
 
   # multisite support
-  IS_MULTISITE=${WORDPRESS_MULTISITE:=false}
-  if $IS_MULTISITE; then
+  if ${WORDPRESS_MULTISITE}; then
+    echo "Enabling multisite functionality..."
+    [[ -z "${WORDPRESS_DOMAIN_CURRENT_SITE}" ]] && echo "The WORDPRESS_DOMAIN_CURRENT_SITE variable must be set." && exit 1
+    [[ -z "${WORDPRESS_HOME}" ]] && echo "The WORDPRESS_HOME variable must be set." && exit 1  
+    [[ -z "${WORDPRESS_SITEURL}" ]] && echo "The WORDPRESS_SITEURL variable must be set." && exit 1   
     cat <<EOF >> /tmp/wp-config.php
-define('WP_ALLOW_MULTISITE', true);
-define('MULTISITE', true );
-define('SUBDOMAIN_INSTALL', false );
-define('PATH_CURRENT_SITE', ‘/’ );
+define( 'WP_ALLOW_MULTISITE', true );
+define('MULTISITE', true);
+define('SUBDOMAIN_INSTALL', false);
+define('PATH_CURRENT_SITE', '/');
+define('SITE_ID_CURRENT_SITE', 1);
+define('BLOG_ID_CURRENT_SITE', 1);
+define('DOMAIN_CURRENT_SITE', 'blogg.resume.se');
+define('WP_HOME','http://blogg.resume.se');
+define('WP_SITEURL','http://blogg.resume.se');
 EOF
   fi
 
@@ -65,6 +85,10 @@ EOF
   echo "-> Generated new wp-config.php file ..."
   mv /tmp/wp-config.php /opt/app-root/src/wp-config.php
 fi
-
+if ${WORDPRESS_DEBUG}; then
+  echo "Wordpress debug enabled....."
+  echo "wp-config:"
+  cat /opt/app-root/src/wp-config.php
+fi
 echo -e "-> Wordpress is now configured!\n"
 exec ${STI_SCRIPTS_PATH}/run-base

@@ -6,19 +6,19 @@ metadata:
   annotations:
     openshift.io/display-name: Wordpress 4.7 + MySQL (Persistent)
     description: Wordpress 4.7 application with a persistent MySQL database. For more information
-      about using this template, including OpenShift considerations, see https://github.com/DagensNyheter/wordpress-quickstart/blob/master/README.md.
+      about using this template, including OpenShift considerations, see https://github.com/BonnierNews/wordpress-quickstart/blob/master/README.md.
     tags: quickstart,php,wordpress
     iconClass: icon-php
     template.openshift.io/long-description: This template defines resources needed
       to develop a wordpress application, including a build configuration, application
       deployment configuration, and database deployment configuration.
     template.openshift.io/provider-display-name: Red Hat, Inc.
-    template.openshift.io/documentation-url: https://github.com/DagensNyheter/wordpress-quickstart
-    template.openshift.io/support-url: https://github.com/DagensNyheter/wordpress-quickstart
+    template.openshift.io/documentation-url: https://github.com/BonnierNews/wordpress-quickstart
+    template.openshift.io/support-url: https://github.com/BonnierNews/wordpress-quickstart
 message: |-
   The following service(s) have been created in your project: ${NAME}, ${DATABASE_SERVICE_NAME}.
 
-  For more information about using this template, including OpenShift considerations, see https://github.com/DagensNyheter/wordpress-quickstart/blob/master/README.md.
+  For more information about using this template, including OpenShift considerations, see https://github.com/BonnierNews/wordpress-quickstart/blob/master/README.md.
 labels:
   template: wordpress-mysql-persistent
 objects:
@@ -368,7 +368,7 @@ parameters:
   displayName: Git Repository URL
   description: The URL of the repository with your application source code.
   required: true
-  value: https://github.com/DagensNyheter/wordpress-quickstart.git
+  value: https://github.com/BonnierNews/wordpress-quickstart.git
 - name: SOURCE_REPOSITORY_REF
   displayName: Git Reference
   description: Set this to a branch name, tag or other ref of your repository if you
@@ -437,6 +437,11 @@ parameters:
   from: "[\\w]{50}"
 - name: WORDPRESS_AUTH_SALT
   displayName: Wordpress Auth Salt
+  description: Set this to a long random string.
+  generate: expression
+  from: "[\\w]{50}"
+- name: WORDPRESS_LOGGED_IN_KEY
+  displayName: Wordpress Logged In key
   description: Set this to a long random string.
   generate: expression
   from: "[\\w]{50}"
