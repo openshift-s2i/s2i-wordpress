@@ -33,6 +33,10 @@ RUN { \
 # Install config templates
 COPY contrib/* /opt/app-root/wordpress/
 
+# Add certs
+RUN mv -f /opt/app-root/wordpress/*.crt /etc/pki/ca-trust/source/anchors/ \
+  && update-ca-trust
+
 # Install wordpress S2I scripts
 COPY s2i/bin/* $STI_SCRIPTS_PATH/
 USER 1001
