@@ -1,0 +1,279 @@
+.TH NodeJS Docker image
+.PP
+This repository contains the source for building various versions of
+the Node.JS application as a reproducible Docker image using
+
+\[la]https://github.com/openshift/source-to-image\[ra].
+Users can choose between RHEL and CentOS based builder images.
+The resulting image can be run using 
+\[la]http://docker.io\[ra].
+
+.SH Usage
+.PP
+To build a simple 
+\[la]https://github.com/sclorg/s2i-nodejs-container/tree/master/8/test/test-app\[ra] application
+using standalone 
+\[la]https://github.com/openshift/source-to-image\[ra] and then run the
+resulting image with 
+\[la]http://docker.io\[ra] execute:
+.IP \n+[step]
+
+\item 
+.PP
+\fBFor RHEL based image\fP
+.PP
+.RS
+
+.nf
+$ s2i build https://github.com/sclorg/s2i\-nodejs\-container.git \-\-context\-dir=8/test/test\-app/ rhscl/nodejs\-8\-rhel7 nodejs\-sample\-app
+$ docker run \-p 8080:8080 nodejs\-sample\-app
+
+.fi
+.RE
+\item 
+.PP
+\fBFor CentOS based image\fP
+.PP
+.RS
+
+.nf
+$ s2i build https://github.com/sclorg/s2i\-nodejs\-container.git \-\-context\-dir=8/test/test\-app/ centos/nodejs\-8\-centos7 nodejs\-sample\-app
+$ docker run \-p 8080:8080 nodejs\-sample\-app
+
+.fi
+.RE
+.PP
+\fBAccessing the application:\fP
+
+.PP
+.RS
+
+.nf
+$ curl 127.0.0.1:8080
+
+.fi
+.RE
+
+.SH Repository organization.IP \n+[step]
+
+\item 
+.PP
+\fB\fB\fC<nodejs\-version>\fR\fP.IP \n+[step]
+
+\item 
+.PP
+\fBDockerfile\fP
+.PP
+CentOS based Dockerfile.
+\item 
+.PP
+\fBDockerfile.rhel7\fP
+.PP
+RHEL based Dockerfile. In order to perform build or test actions on this
+Dockerfile you need to run the action on a properly subscribed RHEL machine.
+\item 
+.PP
+\fB\fB\fCs2i/bin/\fR\fP
+.PP
+This folder contains scripts that are run by 
+\[la]https://github.com/openshift/source-to-image\[ra]:
+.IP \n+[step]
+
+\item 
+.PP
+\fBassemble\fP
+.PP
+Used to install the sources into the location where the application
+will be run and prepare the application for deployment (eg. installing
+modules using npm, etc.)
+\item 
+.PP
+\fBrun\fP
+.PP
+This script is responsible for running the application, by using the
+application web server.
+\item 
+.PP
+\fBusage\fP*
+.PP
+This script prints the usage of this image.
+\item 
+.PP
+\fB\fB\fCcontrib/\fR\fP
+.PP
+This folder contains a file with commonly used modules.
+\item 
+.PP
+\fB\fB\fCtest/\fR\fP
+.PP
+This folder contains the 
+\[la]https://github.com/openshift/source-to-image\[ra]
+test framework with simple Node.JS echo server.
+.IP \n+[step]
+
+\item 
+.PP
+\fB\fB\fCtest\-app/\fR\fP
+.PP
+A simple Node.JS echo server used for testing purposes by the 
+\[la]https://github.com/openshift/source-to-image\[ra] test framework.
+\item 
+.PP
+\fBrun\fP
+.PP
+This script runs the 
+\[la]https://github.com/openshift/source-to-image\[ra] test framework.
+.SH Environment variables
+.PP
+Application developers can use the following environment variables to configure the runtime behavior of this image:
+.TS
+allbox;
+NAME  Description 
+NODE\_ENV		NodeJS runtime mode (default: "production")	
+
+DEV\_MODE		When set to "true", \fB\fCnodemon\fR will be used to automatically reload the server while you work (default: "false"). Setting \fB\fCDEV\_MODE\fR to "true" will change the \fB\fCNODE\_ENV\fR default to "development" (if not explicitly set).	
+
+NPM\_RUN		Select an alternate / custom runtime mode, defined in your \fB\fCpackage.json\fR file's 
+\[la]https://docs.npmjs.com/misc/scripts\[ra] section (default: npm run "start"). These user\-defined run\-scripts are unavailable while \fB\fCDEV\_MODE\fR is in use.	
+
+HTTP\_PROXY		Use an npm proxy during assembly	
+
+HTTPS\_PROXY		Use an npm proxy during assembly	
+
+NPM\_MIRROR		Use a custom NPM registry mirror to download packages during the build process	
+
+.TE
+
+.PP
+One way to define a set of environment variables is to include them as key value pairs in your repo's \fB\fC.s2i/environment\fR file.
+
+.PP
+Example: DATABASE\_USER=sampleUser
+
+.SS NOTE: Define your own "\fB\fCDEV\_MODE\fR":
+.PP
+The following \fB\fCpackage.json\fR example includes a \fB\fCscripts.dev\fR entry.  You can define your own custom 
+\[la]https://docs.npmjs.com/cli/run-script\[ra] scripts in your application's \fB\fCpackage.json\fR file.
+
+.SS Note: Setting logging output verbosity
+.PP
+To alter the level of logs output during an \fB\fCnpm install\fR the npm\_config\_loglevel environment variable can be set. See 
+\[la]https://docs.npmjs.com/misc/config\[ra].
+
+.SH Development Mode
+.PP
+This image supports development mode. This mode can be switched on and off with the environment variable \fB\fCDEV\_MODE\fR. \fB\fCDEV\_MODE\fR can either be set to \fB\fCtrue\fR or \fB\fCfalse\fR.
+Development mode supports two features:
+* Hot Deploy
+* Debugging
+
+.PP
+The debug port can be specified with the environment variable \fB\fCDEBUG\_PORT\fR. \fB\fCDEBUG\_PORT\fR is only valid if \fB\fCDEV\_MODE=true\fR.
+
+.PP
+A simple example command for running the docker container in development mode is:
+
+.PP
+.RS
+
+.nf
+docker run \-\-env DEV\_MODE=true my\-image\-id
+
+.fi
+.RE
+
+.PP
+To run the container in development mode with a debug port of 5454, run:
+
+.PP
+.RS
+
+.nf
+$ docker run \-\-env DEV\_MODE=true DEBUG\_PORT=5454 my\-image\-id
+
+.fi
+.RE
+
+.PP
+To run the container in production mode, run:
+
+.PP
+.RS
+
+.nf
+$ docker run \-\-env DEV\_MODE=false my\-image\-id
+
+.fi
+.RE
+
+.PP
+By default, \fB\fCDEV\_MODE\fR is set to \fB\fCfalse\fR, and \fB\fCDEBUG\_PORT\fR is set to \fB\fC5858\fR, however the \fB\fCDEBUG\_PORT\fR is only relevant if \fB\fCDEV\_MODE=true\fR.
+
+.SH Hot deploy
+.PP
+As part of development mode, this image supports hot deploy. If development mode is enabled, any souce code that is changed in the running container will be immediately reflected in the running nodejs application.
+
+.SS Using Docker's exec
+.PP
+To change your source code in a running container, use Docker's 
+\[la]http://docker.io\[ra] command:
+
+.PP
+.RS
+
+.nf
+$ docker exec \-it <CONTAINER\_ID> /bin/bash
+
+.fi
+.RE
+
+.PP
+After you 
+\[la]http://docker.io\[ra] into the running container, your current directory is set to \fB\fC/opt/app\-root/src\fR, where the source code for your application is located.
+
+.SS Using OpenShift's rsync
+.PP
+If you have deployed the container to OpenShift, you can use 
+\[la]https://docs.openshift.org/latest/dev_guide/copy_files_to_container.html\[ra] to copy local files to a remote container running in an OpenShift pod.
+
+.SS Warning:
+.PP
+The default behaviour of the s2i\-nodejs docker image is to run the Node.js application using the command \fB\fCnpm start\fR. This runs the \fIstart\fP script in the \fIpackage.json\fP file. In developer mode, the application is run using the command \fB\fCnodemon\fR. The default behaviour of nodemon is to look for the \fImain\fP attribute in the \fIpackage.json\fP file, and execute that script. If the \fImain\fP attribute doesn't appear in the \fIpackage.json\fP file, it executes the \fIstart\fP script. So, in order to achieve some sort of uniform functionality between production and development modes, the user should remove the \fImain\fP attribute.
+
+.PP
+Below is an example \fIpackage.json\fP file with the \fImain\fP attribute and \fIstart\fP script marked appropriately:
+
+.PP
+.RS
+
+.nf
+{
+    "name": "node\-echo",
+    "version": "0.0.1",
+    "description": "node\-echo",
+    "main": "example.js", <\-\-\- main attribute
+    "dependencies": {
+    },
+    "devDependencies": {
+        "nodemon": "*"
+    },
+    "engine": {
+        "node": "*",
+        "npm": "*"
+    },
+    "scripts": {
+        "dev": "nodemon \-\-ignore node\_modules/ server.js",
+        "start": "node server.js" <\-\- start script
+    },
+    "keywords": [
+        "Echo"
+    ],
+    "license": "",
+}
+
+.fi
+.RE
+
+.SS Note:
+.PP
+\fB\fCoc rsync\fR is only available in versions 3.1+ of OpenShift.

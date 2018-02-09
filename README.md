@@ -18,6 +18,8 @@ Wordpress versions currently supported are:
 * Wordpress 4.5 (4.5.8)
 * Wordpress 4.6 (4.6.5)
 * Wordpress 4.7 (4.7.4)
+* Wordpress 4.7.9
+* Wordpress 4.9.2
 
 
 ## Usage
@@ -25,6 +27,10 @@ Wordpress versions currently supported are:
 These images are intended to be used with the provided templates in the `openshift` folder.
 
 Add the image streams and the template to your Openshift cluster.
+
+## Overriding s2i behaviour
+
+Adding a `.s2i/bin` folder in the root of your repo allows overriding the default `assemble` and `run`scripts used by the builder.
 
 ## Testing
 
@@ -37,13 +43,18 @@ Then start a mysql container:
 
 Then build and run s2i:
 
-`make build && s2i build ../bbm-resumeblogg  bonniernews/s2i-wordpress47:latest  --pull-policy=never --copy resume-blog; docker run -v /tmp/wp-content:/opt/app-root/wp-content -e WORDPRESS_DB_NAME=wordpress -e WORDPRESS_DB_USER=wordpress -e WORDPRESS_DB_PASSWORD=wordpress -e WORDPRESS_DB_HOST=mysql -e WORDPRESS_DEBUG=true --link mysql:mysql -it -p 8080:8080 resume-blog`
+```
+export WP_SRC_DIR=/users/kalle.anka/src/my-wp
+export WP_S2I_VERSION="-php70-49"
+export WP_CONTENT=/users/kalle.anka/src/my-wp-contentx
+
+make build && s2i build ${WP_SRC_DIR}  bonniernews/s2i-wordpress${WP_S2I_VERSION}:4.9.4  --pull-policy=never --copy my-wp
+docker run -v ${WP_CONTENT}:/opt/app-root/wp-content -e WORDPRESS_DB_NAME=wordpress -e WORDPRESS_DB_USER=wordpress -e WORDPRESS_DB_PASSWORD=wordpress -e WORDPRESS_DB_HOST=mysql -e WORDPRESS_DEBUG=true --link mysql:mysql -it -p 8080:8080 my-wp
+```
+
 
 Point your browser http://localhost:8080
 
-
-
-oc delete all --all && oc delete persistentvolumeclaim --all && oc delete -n openshift imagestream wordpress && oc delete template wordpress-mysql-persistent && oc delete secret wordpress-mysql && oc create -n openshift -f openshift/bonniernews-wordpress-image-streams.yaml && oc create -f openshift/wordpress-template.yaml && oc process wordpress-mysql-persistent| oc create -f -
 
 
 

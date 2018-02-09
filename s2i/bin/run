@@ -7,12 +7,12 @@ readonly WP_BASE_DIR=/opt/app-root/src
 # We copy the original installation files in that case.
 if [ ! "$(ls -A /opt/app-root/wp-content)" ]; then
   echo "-> Installing base Wordpress plugins and themes ..."
-  cp -R ${WP_BASE_DIR}/wp-content-install/* /opt/app-root/wp-content/
+  rsync --stats -a ${WP_BASE_DIR}/wp-content-install/* /opt/app-root/wp-content/
 fi
 
 if [ "$(ls -A /opt/app-root/src/wp-content)" ]; then
   echo "-> Installing provided user content ..."
-  cp -fR ${WP_BASE_DIR}/wp-content/* /opt/app-root/wp-content/
+  rsync --stats -a ${WP_BASE_DIR}/wp-content/* /opt/app-root/wp-content/
 fi
 
 echo "-> Linking './wp-content' to persistent volume ..."
@@ -65,8 +65,8 @@ EOF
   if ${WORDPRESS_MULTISITE}; then
     echo "Enabling multisite functionality..."
     [[ -z "${WORDPRESS_DOMAIN_CURRENT_SITE}" ]] && echo "The WORDPRESS_DOMAIN_CURRENT_SITE variable must be set." && exit 1
-    [[ -z "${WORDPRESS_HOME}" ]] && echo "The WORDPRESS_HOME variable must be set." && exit 1  
-    [[ -z "${WORDPRESS_SITEURL}" ]] && echo "The WORDPRESS_SITEURL variable must be set." && exit 1   
+    [[ -z "${WORDPRESS_HOME}" ]] && echo "The WORDPRESS_HOME variable must be set." && exit 1
+    [[ -z "${WORDPRESS_SITEURL}" ]] && echo "The WORDPRESS_SITEURL variable must be set." && exit 1
     cat <<EOF >> /tmp/wp-config.php
 define( 'WP_ALLOW_MULTISITE', true );
 define('MULTISITE', true);
