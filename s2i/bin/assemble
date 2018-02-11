@@ -5,6 +5,8 @@
 # wordpress files.
 #
 
+# This file overrides the wordpress s2i assemble file.
+
 # Copy the version of wordpress from the image first
 (cd /opt/app-root/src && cp -Rf /opt/app-root/wordpress/. ./)
 

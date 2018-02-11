@@ -4,8 +4,8 @@ apiVersion: v1
 metadata:
   name: wordpress-mysql-persistent
   annotations:
-    openshift.io/display-name: Wordpress 4.7 + MySQL (Persistent)
-    description: Wordpress 4.7 application with a persistent MySQL database. For more information
+    openshift.io/display-name: Wordpress 4.9 + MySQL (Persistent)
+    description: Wordpress 4.9 application with a persistent MySQL database. For more information
       about using this template, including OpenShift considerations, see https://github.com/BonnierNews/wordpress-quickstart/blob/master/README.md.
     tags: quickstart,php,wordpress
     iconClass: icon-php
@@ -21,11 +21,14 @@ message: |-
   For more information about using this template, including OpenShift considerations, see https://github.com/BonnierNews/wordpress-quickstart/blob/master/README.md.
 labels:
   template: wordpress-mysql-persistent
+  app: "wordpress"
 objects:
 - kind: Secret
   apiVersion: v1
   metadata:
     name: "${NAME}"
+    labels:
+      app: "wordpress-${NAME}"
   stringData:
     database-user: "${DATABASE_USER}"
     database-password: "${DATABASE_PASSWORD}"
@@ -43,6 +46,8 @@ objects:
   apiVersion: v1
   metadata:
     name: "${NAME}"
+    labels:
+      app: "wordpress-${NAME}"
     annotations:
       description: Exposes and load balances the application pods
       service.alpha.openshift.io/dependencies: '[{"name": "${DATABASE_SERVICE_NAME}",
@@ -54,25 +59,37 @@ objects:
       targetPort: 8080
     selector:
       name: "${NAME}"
+
 - kind: Route
   apiVersion: v1
   metadata:
     name: "${NAME}"
+    labels:
+      app: "wordpress-${NAME}"
   spec:
-    host: "${APPLICATION_DOMAIN}"
+    host: ""
     to:
       kind: Service
       name: "${NAME}"
+    tls:
+      insecureEdgeTerminationPolicy: Allow
+      termination: edge
+
 - kind: ImageStream
   apiVersion: v1
   metadata:
     name: "${NAME}"
     annotations:
       description: Keeps track of changes in the application image
+    labels:
+      app: "wordpress-${NAME}"
+
 - kind: BuildConfig
   apiVersion: v1
   metadata:
     name: "${NAME}"
+    labels:
+      app: "wordpress-${NAME}"
     annotations:
       description: Defines how to build the application
   spec:
@@ -88,7 +105,7 @@ objects:
         from:
           kind: ImageStreamTag
           namespace: "${NAMESPACE}"
-          name: wordpress:4.7
+          name: wordpress:${WP_VERSION}
     output:
       to:
         kind: ImageStreamTag
@@ -99,14 +116,23 @@ objects:
     - type: GitHub
       github:
         secret: "${GITHUB_WEBHOOK_SECRET}"
+
 - kind: DeploymentConfig
   apiVersion: v1
   metadata:
     name: "${NAME}"
+    labels:
+      app: "wordpress-${NAME}"
     annotations:
       description: Defines how to deploy Wordpress
   spec:
     strategy:
+      rollingParams:
+        intervalSeconds: 30
+        maxSurge: 33%
+        maxUnavailable: 33%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 30
       type: Rolling
     triggers:
     - type: ImageChange
@@ -118,7 +144,7 @@ objects:
           kind: ImageStreamTag
           name: "${NAME}:latest"
     - type: ConfigChange
-    replicas: 1
+    replicas: 2
     selector:
       name: "${NAME}"
     template:
@@ -140,8 +166,11 @@ objects:
           - name: "${NAME}-data"
             mountPath: "/opt/app-root/wp-content"
           readinessProbe:
-            timeoutSeconds: 3
-            initialDelaySeconds: 3
+            timeoutSeconds: 15
+            failureThreshold: 4
+            periodSeconds: 20
+            successThreshold: 1
+            initialDelaySeconds: 60
             httpGet:
               path: "/health.php"
               httpHeaders:
@@ -149,8 +178,11 @@ objects:
                   value: "${K8S_PROBE}"
               port: 8080
           livenessProbe:
-            timeoutSeconds: 3
-            initialDelaySeconds: 30
+            timeoutSeconds: 15
+            failureThreshold: 4
+            periodSeconds: 20
+            successThreshold: 1
+            initialDelaySeconds: 70
             httpGet:
               path: "/health.php"
               httpHeaders:
@@ -225,29 +257,42 @@ objects:
                 key: k8s-probe
           - name: OPCACHE_REVALIDATE_FREQ
             value: "${OPCACHE_REVALIDATE_FREQ}"
+          - name: OPCACHE_MEMORY_CONSUMPTION
+            value: "${OPCACHE_MEMORY_CONSUMPTION}"
+          - name: APCU_MEMORY_CONSUMPTION
+            value: "${APCU_MEMORY_CONSUMPTION}"
           resources:
-            limits:
-              memory: "${MEMORY_LIMIT}"
+            requests:
+              memory: "${MEMORY_LIMIT}Mi"
+              cpu: 1000m
+
 - kind: PersistentVolumeClaim
   apiVersion: v1
   metadata:
     name: "${DATABASE_SERVICE_NAME}"
+    labels:
+      app: "wordpress-${NAME}"
   spec:
     accessModes:
     - ReadWriteOnce
     resources:
       requests:
         storage: "${VOLUME_CAPACITY}"
+
 - kind: PersistentVolumeClaim
   apiVersion: v1
   metadata:
     name: "${NAME}-wp-content"
+    labels:
+      app: "wordpress-${NAME}"
   spec:
     accessModes:
     - ReadWriteMany
     resources:
       requests:
         storage: "${WORDPRESS_VOLUME_CAPACITY}"
+    storageClassName: nfs
+
 - kind: Service
   apiVersion: v1
   metadata:
@@ -261,6 +306,7 @@ objects:
       targetPort: 3306
     selector:
       name: "${DATABASE_SERVICE_NAME}"
+
 - kind: DeploymentConfig
   apiVersion: v1
   metadata:
@@ -332,13 +378,17 @@ objects:
             value: "${DATABASE_NAME}"
           resources:
             limits:
-              memory: "${MEMORY_MYSQL_LIMIT}"
+              memory: "${MEMORY_MYSQL_LIMIT}Mi"
 parameters:
 - name: NAME
   displayName: Name
   description: The name assigned to all of the frontend objects defined in this template.
   required: true
-  value: wordpress-mysql
+- name: WP_VERSION
+  displayName: Wordpress version
+  description: The version of wordpress to use.
+  required: true
+  value: 4.9.4-php-7.0
 - name: NAMESPACE
   displayName: Namespace
   description: The OpenShift Namespace where the ImageStream resides.
@@ -346,23 +396,23 @@ parameters:
   value: openshift
 - name: MEMORY_LIMIT
   displayName: Memory Limit
-  description: Maximum amount of memory the wordpress container can use.
+  description: Maximum amount of memory in Mi the wordpress container can use.
   required: true
-  value: 512Mi
+  value: 1024
 - name: MEMORY_MYSQL_LIMIT
   displayName: Memory Limit (MySQL)
-  description: Maximum amount of memory the MySQL container can use.
+  description: Maximum amount of memory in Mi the MySQL container can use.
   required: true
-  value: 512Mi
+  value: 1024
 - name: VOLUME_CAPACITY
   displayName: MySQL Volume Capacity
   description: Volume space available for MySQL data, e.g. 512Mi, 2Gi
-  value: 5Gi
+  value: 10Gi
   required: true
 - name: WORDPRESS_VOLUME_CAPACITY
   displayName: Wordpress Volume Capacity
   description: Volume space available for Wordpress data, e.g. 512Mi, 2Gi
-  value: 5Gi
+  value: 10Gi
   required: true
 - name: SOURCE_REPOSITORY_URL
   displayName: Git Repository URL
@@ -377,11 +427,6 @@ parameters:
   displayName: Context Directory
   description: Set this to the relative path to your project if it is not in the root
     of your repository.
-- name: APPLICATION_DOMAIN
-  displayName: Application Hostname
-  description: The exposed hostname that will route to the wordpress service, if left
-    blank a value will be defaulted.
-  value: ''
 - name: GITHUB_WEBHOOK_SECRET
   displayName: GitHub Webhook Secret
   description: A secret string used to configure the GitHub webhook.
@@ -470,3 +515,11 @@ parameters:
   description: How often to check script timestamps for updates, in seconds. 0 will
     result in OPcache checking for updates on every request.
   value: '2'
+- name: OPCACHE_MEMORY_CONSUMPTION
+  displayName: OPcache memory size in Mi.
+  description: Size of the in-memory OPCache.
+  value: '128'
+- name: APCU_MEMORY_CONSUMPTION
+  displayName: APCU memory size in Mi.
+  description: Size of the in-memory APCU Cache.
+  value: '128'

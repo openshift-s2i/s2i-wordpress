@@ -11,15 +11,21 @@ Documentation].
 
 This repo is built on https://github.com/openshift-s2i/s2i-wordpress
 
+The image extends the php s2i images with nodejs 8. THus making i possible to run things like `gulp` during the `assmble` phase. It also includes `apcu` extensions for objectlevel caches in php.
+
+It builds 2 variants / wordpress version, one using php 5.6 and one using php 7.0.
+
+*To switch versions, change your build config and point to the imagestream you want to use/test.*
+
 ## Versions
 
 Wordpress versions currently supported are:
 
-* Wordpress 4.5 (4.5.8)
-* Wordpress 4.6 (4.6.5)
-* Wordpress 4.7 (4.7.4)
-* Wordpress 4.7.9
-* Wordpress 4.9.2
+* Wordpress (php 5.6) 4.5 (4.5.8, latest) 
+* Wordpress (php 5.6) 4.6 (4.6.5, latest)
+* Wordpress (php 5.6) 4.7 (4.7.4, latest)
+* Wordpress (php 5.6 + php 7.0) 4.7.9
+* Wordpress (php 5.6 + php 7.0) 4.9.2
 
 
 ## Usage
@@ -28,34 +34,59 @@ These images are intended to be used with the provided templates in the `openshi
 
 Add the image streams and the template to your Openshift cluster.
 
+## wp-cli
+THe images includes wp-cli for enabling cli access to the wordpress installation. Just run `wp` in the working directory of the image.
+
+## Building the s2i container
+
+Just run `make build` to build the container. Push it by running `make push`.
+
+Update and replace the imagestreams and templates:
+
+`oc replace -f openshift/* -n openhift`
+
 ## Overriding s2i behaviour
 
-Adding a `.s2i/bin` folder in the root of your repo allows overriding the default `assemble` and `run`scripts used by the builder.
+Adding a `.s2i/bin` folder in the root of your repo allows overriding the default `assemble` and `run` scripts used by the builder.
+
+Checkout mittkök for an example.
 
 ## Testing
 
-* Install `s2i`.
+* Install `s2i` from https://github.com/openshift/source-to-image/releases[s2i releases].
 
 Then start a mysql container:
-
 `docker run -d -e MYSQL_DATABASE=wordpress -e MYSQL_USER=wordpress -e MYSQL_PASSWORD=wordpress -e MYSQL_ALLOW_EMPTY_PASSWORD=true -p 3306:3306 --name mysql mysql`
+
+Restore the database:
+`cat wordpress.sql|mysql -h 127.0.0.1 -u wordpress -pwordpress wordpress`
+
+Download|Update wp-content from the current installation.
 
 
 Then build and run s2i:
 
 ```
-export WP_SRC_DIR=/users/kalle.anka/src/my-wp
+export WP_CONTENT=../my-wp/wp-content
 export WP_S2I_VERSION="-php70-49"
-export WP_CONTENT=/users/kalle.anka/src/my-wp-contentx
+export WP_SRC_DIR=../my-wp/
 
-make build && s2i build ${WP_SRC_DIR}  bonniernews/s2i-wordpress${WP_S2I_VERSION}:4.9.4  --pull-policy=never --copy my-wp
+s2i build ${WP_SRC_DIR}  bonniernews/s2i-wordpress${WP_S2I_VERSION}:4.9.4  --pull-policy=never --copy my-wp
 docker run -v ${WP_CONTENT}:/opt/app-root/wp-content -e WORDPRESS_DB_NAME=wordpress -e WORDPRESS_DB_USER=wordpress -e WORDPRESS_DB_PASSWORD=wordpress -e WORDPRESS_DB_HOST=mysql -e WORDPRESS_DEBUG=true --link mysql:mysql -it -p 8080:8080 my-wp
 ```
 
 
+Update site urls and admin password using wp-cli:
+
+```
+wp user update 1 --user_pass=demo
+wp option update home 'http://localhost:8080'
+wp option update siteurl 'http://localhost:8080'
+```
+
+
+
 Point your browser http://localhost:8080
-
-
 
 
 ## Copyright and License

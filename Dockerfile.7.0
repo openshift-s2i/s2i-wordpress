@@ -31,28 +31,21 @@ RUN cd /tmp && curl -o wordpress.tar.gz -SL https://wordpress.org/wordpress-${WO
     && mv $STI_SCRIPTS_PATH/run $STI_SCRIPTS_PATH/run-base \
     && mv $STI_SCRIPTS_PATH/assemble $STI_SCRIPTS_PATH/assemble-base \
     && fix-permissions /opt/app-root/wordpress \
-    && fix-permissions /opt/app-root/wp-content && chmod -R 0777 /opt/app-root/wp-content
+    && fix-permissions /opt/app-root/wp-content && chmod -R 0777 /opt/app-root/wp-content \
+    && curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
+    && php wp-cli.phar --info \
+    && mv wp-cli.phar /usr/local/bin/wp \
+    && chmod +x /usr/local/bin/wp \
+    && rm -f ${PHP_SYSCONF_PATH}/php.d/40-apcu.ini
 
-
-# Copied from the official Wordpress Docker image
-RUN { \
-      echo 'opcache.memory_consumption=128'; \
-      echo 'opcache.interned_strings_buffer=8'; \
-      echo 'opcache.max_accelerated_files=4000'; \
-      echo 'opcache.revalidate_freq=60'; \
-      echo 'opcache.fast_shutdown=1'; \
-      echo 'opcache.enable_cli=1'; \
-      } > /etc/opt/rh/rh-php70/php.d/11-opcache-wordpress.ini
+# Install config templates and certs
+COPY contrib/templates/* /opt/app-root/templates/
+COPY contrib/certs/* /etc/pki/ca-trust/source/anchors/
+# Add certs
+RUN update-ca-trust
 
 # Add root
 COPY ./root/ /
-
-# Install config templates
-COPY contrib/* /opt/app-root/wordpress/
-
-# Add certs
-RUN mv -f /opt/app-root/wordpress/*.crt /etc/pki/ca-trust/source/anchors/ \
-  && update-ca-trust
 
 # Install wordpress S2I scripts
 COPY s2i/bin/* $STI_SCRIPTS_PATH/
