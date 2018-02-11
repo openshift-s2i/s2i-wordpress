@@ -25,3 +25,10 @@ for version in ${VERSIONS}; do
     --label io.bonniernews.wordpress.build.date="$(date +%c)" \
     --label io.bonniernews.wordpress.build.user="${USER}" .
 done
+
+## apache_exporter
+docker build -f Dockerfile.apache_exporter \
+    -t ${NAMESPACE}/apache_exporter:latest \
+    --label io.bonniernews.apache_exporter.build.date="$(date +%c)" \
+    --label io.bonniernews.apache_exporter.build.user="${USER}" \
+    --label io.bonniernews.apache_exporter.repo="s2i-wordpress"  .

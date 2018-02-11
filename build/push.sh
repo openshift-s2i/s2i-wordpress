@@ -15,3 +15,5 @@ for version in ${VERSIONS}; do
     echo "=== Pushing Wordpress s2i v${_version}"
     docker push ${NAMESPACE}/${BASE_IMAGE_NAME}-php70-${_short_version}:${_version}
 done
+
+docker push ${NAMESPACE}/apache_exporter:latest

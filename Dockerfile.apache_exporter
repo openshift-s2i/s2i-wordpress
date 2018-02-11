@@ -1,0 +1,8 @@
+# Docker builder for Golang
+FROM  golang:1.8-jessie as builder
+RUN go get -v github.com/Lusitaniae/apache_exporter && env && ls -al /go/bin
+
+FROM centos:7
+COPY --from=builder /go/bin/apache_exporter /usr/bin/apache_exporter
+ENTRYPOINT ["/usr/bin/apache_exporter"]
+EXPOSE     9117

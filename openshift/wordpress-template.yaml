@@ -51,13 +51,17 @@ objects:
       app: "wordpress-${NAME}"
     annotations:
       description: Exposes and load balances the application pods
-      service.alpha.openshift.io/dependencies: '[{"name": "${DATABASE_SERVICE_NAME}",
-        "kind": "Service"}]'
+      service.alpha.openshift.io/dependencies: '[{"name": "${DATABASE_SERVICE_NAME}","kind": "Service"}]'
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9117"
   spec:
     ports:
     - name: wordpress
       port: 8080
       targetPort: 8080
+    - name: exporter
+      port: 9117
+      targetPort: 9117
     selector:
       name: "${NAME}"
 
@@ -158,6 +162,14 @@ objects:
           persistentVolumeClaim:
             claimName: "${NAME}-wp-content"
         containers:
+        - name: apache-exporter
+          image: bonniernews/apache_exporter:latest
+          ports:
+          - containerPort: 9117
+            name: exporter
+          args:
+            -  --scrape_uri
+            - "http://127.0.0.1:8082/server-status/?auto"
         - name: wordpress
           image: " "
           ports:
