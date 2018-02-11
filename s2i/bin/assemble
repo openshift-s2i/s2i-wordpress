@@ -9,5 +9,6 @@
 
 # Copy the version of wordpress from the image first
 (cd /opt/app-root/src && cp -Rf /opt/app-root/wordpress/. ./)
+(cd /opt/app-root/src && cp -Rf /opt/app-root/etc/httpd-cfg ./)
 
 ${STI_SCRIPTS_PATH}/assemble-base
