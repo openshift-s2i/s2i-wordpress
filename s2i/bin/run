@@ -85,7 +85,7 @@ EOF
   fi
 
   # Completize configuration
-  cat wp-config.php.template >> /tmp/wp-config.php
+  cat ../templates/wp-config.php.template >> /tmp/wp-config.php
   echo "-> Generated new wp-config.php file ..."
   mv /tmp/wp-config.php /opt/app-root/src/wp-config.php
 fi
@@ -100,6 +100,6 @@ echo "-> Optimizing memory settings for caches and httpd..."
 
 echo -e "-> Setting up APCU cache..."
 export APCU_MEMORY_CONSUMPTION=${APCU_MEMORY_CONSUMPTION:-128}
-envsubst < /opt/app-root/templates/40-apcu.template > ${PHP_SYSCONF_PATH}/php.d/40-apcu.ini
+envsubst < ../templates/40-apcu.template > ${PHP_SYSCONF_PATH}/php.d/40-apcu.ini
 
 exec ${STI_SCRIPTS_PATH}/run-base

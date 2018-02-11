@@ -4,7 +4,7 @@ apiVersion: v1
 metadata:
   name: wordpress-mysql-persistent
   annotations:
-    openshift.io/display-name: Wordpress 4.9 + MySQL (Persistent)
+    openshift.io/display-name: "Wordpress 4.9 + MySQL (Persistent)"
     description: Wordpress 4.9 application with a persistent MySQL database. For more information
       about using this template, including OpenShift considerations, see https://github.com/BonnierNews/wordpress-quickstart/blob/master/README.md.
     tags: quickstart,php,wordpress
@@ -23,6 +23,7 @@ labels:
   template: wordpress-mysql-persistent
   app: "wordpress"
 objects:
+
 - kind: Secret
   apiVersion: v1
   metadata:
@@ -67,7 +68,6 @@ objects:
     labels:
       app: "wordpress-${NAME}"
   spec:
-    host: ""
     to:
       kind: Service
       name: "${NAME}"
@@ -265,6 +265,8 @@ objects:
             requests:
               memory: "${MEMORY_LIMIT}Mi"
               cpu: 1000m
+            limits:
+              memory: "${MEMORY_LIMIT}Mi"
 
 - kind: PersistentVolumeClaim
   apiVersion: v1
@@ -311,6 +313,8 @@ objects:
   apiVersion: v1
   metadata:
     name: "${DATABASE_SERVICE_NAME}"
+    labels:
+      app: "wordpress-${NAME}"
     annotations:
       description: Defines how to deploy the database
   spec:
@@ -335,6 +339,7 @@ objects:
         name: "${DATABASE_SERVICE_NAME}"
         labels:
           name: "${DATABASE_SERVICE_NAME}"
+          app: "wordpress-${NAME}"
       spec:
         volumes:
         - name: "${DATABASE_SERVICE_NAME}-data"
@@ -398,12 +403,12 @@ parameters:
   displayName: Memory Limit
   description: Maximum amount of memory in Mi the wordpress container can use.
   required: true
-  value: 1024
+  value: "1024"
 - name: MEMORY_MYSQL_LIMIT
   displayName: Memory Limit (MySQL)
   description: Maximum amount of memory in Mi the MySQL container can use.
   required: true
-  value: 1024
+  value: "1024"
 - name: VOLUME_CAPACITY
   displayName: MySQL Volume Capacity
   description: Volume space available for MySQL data, e.g. 512Mi, 2Gi
@@ -512,14 +517,13 @@ parameters:
   from: "[a-zA-Z0-9]{16}"
 - name: OPCACHE_REVALIDATE_FREQ
   displayName: OPcache Revalidation Frequency
-  description: How often to check script timestamps for updates, in seconds. 0 will
-    result in OPcache checking for updates on every request.
-  value: '2'
+  description: How often to check script timestamps for updates, in seconds. 0 will result in OPcache checking for updates on every request.
+  value: "2"
 - name: OPCACHE_MEMORY_CONSUMPTION
   displayName: OPcache memory size in Mi.
   description: Size of the in-memory OPCache.
-  value: '128'
+  value: "128"
 - name: APCU_MEMORY_CONSUMPTION
   displayName: APCU memory size in Mi.
   description: Size of the in-memory APCU Cache.
-  value: '128'
+  value: "128"
