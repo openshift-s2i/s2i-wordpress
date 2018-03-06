@@ -1,0 +1,95 @@
+---
+kind: ImageStreamList
+apiVersion: v1
+metadata: {}
+items:
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: wordpress
+  spec:
+    tags:
+    - name: '4.5'
+      annotations:
+        description: Build and run Wordpress 4.5
+        tags: builder,wordpress,php
+        supports: wordpress:4.5,wordpress
+        version: '4.5'
+        sampleRepo: https://github.com/BonnierNews/wordpress-quickstart
+      from:
+        kind: DockerImage
+        name: bonniernews/s2i-wordpress45:latest
+      importPolicy:
+        scheduled: true
+    - name: '4.6'
+      annotations:
+        description: Build and run Wordpress 4.6
+        tags: builder,wordpress,php
+        supports: wordpress:4.6,wordpress
+        version: '4.6'
+        sampleRepo: https://github.com/BonnierNews/wordpress-quickstart
+      from:
+        kind: DockerImage
+        name: bonniernews/s2i-wordpress46:latest
+      importPolicy:
+        scheduled: true
+    - name: '4.7'
+      annotations:
+        description: Build and run Wordpress 4.7
+        tags: builder,wordpress,php
+        supports: wordpress:4.7,wordpress
+        version: '4.7'
+        sampleRepo: https://github.com/BonnierNews/wordpress-quickstart
+      from:
+        kind: DockerImage
+        name: bonniernews/s2i-wordpress47:latest
+      importPolicy:
+        scheduled: true
+    - name: '4.7.9'
+      annotations:
+        description: Build and run Wordpress 4.7.9
+        tags: builder,wordpress,php
+        supports: wordpress:4.7.9,wordpress
+        version: '4.7.9'
+        sampleRepo: https://github.com/BonnierNews/wordpress-quickstart
+      from:
+        kind: DockerImage
+        name: bonniernews/s2i-wordpress47:4.7.9
+      importPolicy:
+        scheduled: true
+    - name: '4.7.9-php-7.0'
+      annotations:
+        description: Build and run Wordpress 4.7.9 (PHP 7.0)
+        tags: builder,wordpress,php
+        supports: wordpress:4.7.9,wordpress
+        version: '4.7.9'
+        sampleRepo: https://github.com/BonnierNews/wordpress-quickstart
+      from:
+        kind: DockerImage
+        name: bonniernews/s2i-wordpress-php70-47:4.7.9
+      importPolicy:
+        scheduled: true
+    - name: '4.9.4'
+      annotations:
+        description: Build and run Wordpress 4.9.4
+        tags: builder,wordpress,php
+        supports: wordpress:4.9.4,wordpress
+        version: '4.9.4'
+        sampleRepo: https://github.com/BonnierNews/wordpress-quickstart
+      from:
+        kind: DockerImage
+        name: bonniernews/s2i-wordpress49:4.9.4
+      importPolicy:
+        scheduled: true
+    - name: '4.9.4-php-7.0'
+      annotations:
+        description: Build and run Wordpress 4.9.4 (PHP 7.0)
+        tags: builder,wordpress,php
+        supports: wordpress:4.9.4,wordpress
+        version: '4.9.4'
+        sampleRepo: https://github.com/BonnierNews/wordpress-quickstart
+      from:
+        kind: DockerImage
+        name: bonniernews/s2i-wordpress-php70-49:4.9.4
+      importPolicy:
+        scheduled: true
