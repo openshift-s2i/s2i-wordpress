@@ -7,12 +7,12 @@ readonly WP_BASE_DIR=/opt/app-root/src
 # We copy the original installation files in that case.
 if [ ! "$(ls -A /opt/app-root/wp-content)" ]; then
   echo "-> Installing base Wordpress plugins and themes ..."
-  cp -R ${WP_BASE_DIR}/wp-content-install/* /opt/app-root/wp-content/
+  rsync --stats -rlhO ${WP_BASE_DIR}/wp-content-install/* /opt/app-root/wp-content/
 fi
 
 if [ "$(ls -A /opt/app-root/src/wp-content)" ]; then
   echo "-> Installing provided user content ..."
-  cp -fR ${WP_BASE_DIR}/wp-content/* /opt/app-root/wp-content/
+  rsync --stats -rlhOd --itemize-changes --no-times --no-owner --checksum ${WP_BASE_DIR}/wp-content/* /opt/app-root/wp-content/
 fi
 
 echo "-> Linking './wp-content' to persistent volume ..."
@@ -59,14 +59,18 @@ define('NONCE_SALT',       getenv('WORDPRESS_NONCE_SALT'));
 
 \$table_prefix  = '${WORDPRESS_TABLE_PREFIX}';
 define('WP_DEBUG', ${WORDPRESS_DEBUG});
+define( 'WP_MEMORY_LIMIT', '256M' );
+// Back-end
+define( 'WP_MAX_MEMORY_LIMIT', '256M' );
+//
 EOF
 
   # multisite support
   if ${WORDPRESS_MULTISITE}; then
     echo "Enabling multisite functionality..."
     [[ -z "${WORDPRESS_DOMAIN_CURRENT_SITE}" ]] && echo "The WORDPRESS_DOMAIN_CURRENT_SITE variable must be set." && exit 1
-    [[ -z "${WORDPRESS_HOME}" ]] && echo "The WORDPRESS_HOME variable must be set." && exit 1  
-    [[ -z "${WORDPRESS_SITEURL}" ]] && echo "The WORDPRESS_SITEURL variable must be set." && exit 1   
+    [[ -z "${WORDPRESS_HOME}" ]] && echo "The WORDPRESS_HOME variable must be set." && exit 1
+    [[ -z "${WORDPRESS_SITEURL}" ]] && echo "The WORDPRESS_SITEURL variable must be set." && exit 1
     cat <<EOF >> /tmp/wp-config.php
 define( 'WP_ALLOW_MULTISITE', true );
 define('MULTISITE', true);
@@ -81,7 +85,7 @@ EOF
   fi
 
   # Completize configuration
-  cat wp-config.php.template >> /tmp/wp-config.php
+  cat ../templates/wp-config.php.template >> /tmp/wp-config.php
   echo "-> Generated new wp-config.php file ..."
   mv /tmp/wp-config.php /opt/app-root/src/wp-config.php
 fi
@@ -91,4 +95,11 @@ if ${WORDPRESS_DEBUG}; then
   cat /opt/app-root/src/wp-config.php
 fi
 echo -e "-> Wordpress is now configured!\n"
+
+echo "-> Optimizing memory settings for caches and httpd..."
+
+echo -e "-> Setting up APCU cache..."
+export APCU_MEMORY_CONSUMPTION=${APCU_MEMORY_CONSUMPTION:-128}
+envsubst < ../templates/40-apcu.template > ${PHP_SYSCONF_PATH}/php.d/40-apcu.ini
+
 exec ${STI_SCRIPTS_PATH}/run-base
