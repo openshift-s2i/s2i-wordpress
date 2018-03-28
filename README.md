@@ -51,6 +51,14 @@ Adding a `.s2i/bin` folder in the root of your repo allows overriding the defaul
 
 Checkout mittkök for an example.
 
+## Migrating to Openshift
+Use the template to setup the environment. Then rsync uploads and restore the database:
+* Start by rsyncing the old content: `mkdir -p tmp && rsync -L -a --progress -e "ssh -p <port>" user@existingserver.com:/var/www/webroot/ROOT/wp-content/* tmp/`
+* rsync content to the pod's persistent storage: `oc rsync wp-content/uploafs $(oc get po -l name=bloggar -o name| cut -d "/" -f2):/opt/app-root/wp-content/ -c wordpress --progress=true --strategy=rsync-daemon --no-perms=true`
+
+
+
+
 ## Testing
 
 * Install `s2i` from https://github.com/openshift/source-to-image/releases[s2i releases].
