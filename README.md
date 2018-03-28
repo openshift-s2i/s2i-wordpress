@@ -56,6 +56,8 @@ Use the template to setup the environment. Then rsync uploads and restore the da
 * Start by rsyncing the old content: `mkdir -p tmp && rsync -L -a --progress -e "ssh -p <port>" user@existingserver.com:/var/www/webroot/ROOT/wp-content/* tmp/`
 * rsync content to the pod's persistent storage: `oc rsync wp-content/uploads $(oc get po -l name=bloggar -o name| cut -d "/" -f2):/opt/app-root/wp-content/ -c wordpress --progress=true --strategy=rsync-daemon --no-perms=true`
 * Dump the current database: `ssh user@existingserver.com "cd webroot/ROOT && ~/bin/wp --url=bloggar.expressen.se --quiet db export -" > dump.sql` 
+* Start a portforward to the myslq pod: `oc port-forward $(oc get po -l name=mysql -o name| cut -d "/" -f2) 3306:3306` 
+* Restore the database:  `cat ~/tmp/bloggar.expressen.se/dump.sql |mysql -h 127.0.0.1 -u <dbuser> -p<dbpassword> wordpress` 
 
 
 
