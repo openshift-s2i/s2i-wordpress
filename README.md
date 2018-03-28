@@ -35,7 +35,7 @@ These images are intended to be used with the provided templates in the `openshi
 Add the image streams and the template to your Openshift cluster.
 
 ## wp-cli
-THe images includes wp-cli for enabling cli access to the wordpress installation. Just run `wp` in the working directory of the image.
+The images includes wp-cli for enabling cli access to the wordpress installation. Just run `wp` in the working directory of the image.
 
 ## Building the s2i container
 
@@ -54,7 +54,7 @@ Checkout mittkök for an example.
 ## Migrating to Openshift
 Use the template to setup the environment. Then rsync uploads and restore the database:
 * Start by rsyncing the old content: `mkdir -p tmp && rsync -L -a --progress -e "ssh -p <port>" user@existingserver.com:/var/www/webroot/ROOT/wp-content/* tmp/`
-* rsync content to the pod's persistent storage: `oc rsync wp-content/uploafs $(oc get po -l name=bloggar -o name| cut -d "/" -f2):/opt/app-root/wp-content/ -c wordpress --progress=true --strategy=rsync-daemon --no-perms=true`
+* rsync content to the pod's persistent storage: `oc rsync wp-content/uploads $(oc get po -l name=bloggar -o name| cut -d "/" -f2):/opt/app-root/wp-content/ -c wordpress --progress=true --strategy=rsync-daemon --no-perms=true`
 
 
 
