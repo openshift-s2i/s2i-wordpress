@@ -8,7 +8,7 @@
 # This file overrides the wordpress s2i assemble file.
 
 # Copy the version of wordpress from the image first
-echp -e "--> Adding wordpress"
+echo -e "--> Adding wordpress"
 (cd /opt/app-root/src && cp -Rf /opt/app-root/wordpress/. ./)
 
 echo -e "--> Adding httpd-cfg"
