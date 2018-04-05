@@ -55,10 +55,13 @@ Checkout mittkök for an example.
 Use the template to setup the environment. Then rsync uploads and restore the database:
 * Start by rsyncing the old content: `mkdir -p tmp && rsync -L -a --progress -e "ssh -p <port>" user@existingserver.com:/var/www/webroot/ROOT/wp-content/* tmp/`
 * rsync content to the pod's persistent storage: `oc rsync wp-content/uploads $(oc get po -l name=bloggar -o name| cut -d "/" -f2):/opt/app-root/wp-content/ -c wordpress --progress=true --strategy=rsync-daemon --no-perms=true`
-* Dump the current database: `ssh user@existingserver.com "cd webroot/ROOT && ~/bin/wp --url=bloggar.expressen.se --quiet db export -" > dump.sql` 
+* Dump the current database: `ssh user@existingserver.com "cd webroot/ROOT && nice -n 19 ~/bin/wp --url=old.com --quiet db export -" > dump.sql` 
 * Start a portforward to the myslq pod: `oc port-forward $(oc get po -l name=mysql -o name| cut -d "/" -f2) 3306:3306` 
-* Restore the database:  `cat ~/tmp/bloggar.expressen.se/dump.sql |mysql -h 127.0.0.1 -u <dbuser> -p<dbpassword> wordpress` 
+* Restore the database:  `cat ~/tmp/dump.sql |mysql -h 127.0.0.1 -u <dbuser> -p<dbpassword> wordpress` 
 
+* Or all-in-one: `ssh -p 22 user@old.com "cd webroot/ROOT && nice -n 19 ~/bin/wp --url=old.com --quiet db export -" | oc rsh $(oc get po -o name -l name=mysql) /opt/rh/rh-mysql57/root/usr/bin/mysql -u root wordpress` 
+
+* Fix any changes to the url(s): `wp search-replace --url=http://old.com 'http://old.com' 'https://new.com' --recurse-objects --network --skip-columns=guid --skip-tables=wp_users`
 
 
 
