@@ -59,6 +59,10 @@ define('NONCE_SALT',       getenv('WORDPRESS_NONCE_SALT'));
 
 \$table_prefix  = '${WORDPRESS_TABLE_PREFIX}';
 define('WP_DEBUG', ${WORDPRESS_DEBUG});
+if ( WP_DEBUG ) {
+    define( 'WP_DEBUG_LOG', true );
+    define( 'WP_DEBUG_DISPLAY', false );
+}
 define( 'WP_MEMORY_LIMIT', '256M' );
 // Back-end
 define( 'WP_MAX_MEMORY_LIMIT', '256M' );
