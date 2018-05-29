@@ -1,13 +1,13 @@
 # Bonnier News Wordpress Docker images
 
 This repository contains the source for creating a
-https://github.com/openshift/source-to-image[source-to-image] builder image,
-which can be used to create reproducible Docker images with https://wordpress.org[Wordpress]
+[source-to-image](https://github.com/openshift/source-to-image) builder image,
+which can be used to create reproducible Docker images with [Wordpress](https://wordpress.org)
 
 For more information about using these images with OpenShift, please see
 the official
-https://docs.openshift.org/latest/using_images/s2i_images/php.html[OpenShift
-Documentation].
+[OpenShift
+Documentation](https://docs.openshift.org/latest/using_images/s2i_images/php.html).
 
 This repo is built on https://github.com/openshift-s2i/s2i-wordpress
 
@@ -67,7 +67,7 @@ Use the template to setup the environment. Then rsync uploads and restore the da
 
 ## Testing
 
-* Install `s2i` from https://github.com/openshift/source-to-image/releases[s2i releases].
+* Install `s2i` from [s2i releases](https://github.com/openshift/source-to-image/releases).
 
 Then start a mysql container:
 `docker run -d -e MYSQL_DATABASE=wordpress -e MYSQL_USER=wordpress -e MYSQL_PASSWORD=wordpress -e MYSQL_ALLOW_EMPTY_PASSWORD=true -p 3306:3306 --name mysql mysql`
