@@ -106,4 +106,26 @@ echo -e "-> Setting up APCU cache..."
 export APCU_MEMORY_CONSUMPTION=${APCU_MEMORY_CONSUMPTION:-128}
 envsubst < ../templates/40-apcu.template > ${PHP_SYSCONF_PATH}/php.d/40-apcu.ini
 
+echo -e "-> Adding default .htaccess"
+if [ ! -f /opt/app-root/src/.htaccess ]; then
+    cat <<EOF > /opt/app-root/src/.htaccess
+
+# BEGIN WordPress
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>
+# END WordPress
+
+<IfModule mod_php5.c>
+php_value max_execution_time 60
+</IfModule>
+
+SetEnv HTTPS on
+EOF
+fi
 exec ${STI_SCRIPTS_PATH}/run-base
