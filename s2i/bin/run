@@ -106,6 +106,9 @@ echo -e "-> Setting up APCU cache..."
 export APCU_MEMORY_CONSUMPTION=${APCU_MEMORY_CONSUMPTION:-128}
 envsubst < ../templates/40-apcu.template > ${PHP_SYSCONF_PATH}/php.d/40-apcu.ini
 
+echo -e "-> Setting up Redis extension..."
+envsubst < ../templates/50-redis.template > ${PHP_SYSCONF_PATH}/php.d/50-redis.ini
+
 echo -e "-> Adding default .htaccess"
 if [ ! -f /opt/app-root/src/.htaccess ]; then
     cat <<EOF > /opt/app-root/src/.htaccess
