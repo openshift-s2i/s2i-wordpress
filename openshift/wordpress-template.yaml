@@ -212,6 +212,12 @@ objects:
             value: "${WORDPRESS_DEBUG}"
           - name: WORDPRESS_MULTISITE
             value: "${WORDPRESS_MULTISITE}"
+          - name: WP_CACHE
+            value: "${WP_CACHE}"
+          - name: WP_MEMORY_LIMIT
+            value: "${WP_MEMORY_LIMIT}"
+          - name: WP_MAX_MEMORY_LIMIT
+            value: "${WP_MAX_MEMORY_LIMIT}"
           - name: WORDPRESS_DB_USER
             valueFrom:
               secretKeyRef:
@@ -539,3 +545,15 @@ parameters:
   displayName: APCU memory size in Mi.
   description: Size of the in-memory APCU Cache.
   value: "128"
+- name: WP_MEMORY_LIMIT
+  displayName: Wordpress memory
+  description: Size of the wordpress memory
+  value: "256M"
+- name: WP_MAX_MEMORY_LIMIT
+  displayName: Wordpress max memory
+  description: Size of the wordpress max  memory
+  value: "256M"
+- name: WP_CACHE
+  displayName: Use advanced-cache.php
+  description: Enable caching
+  value: "false"
