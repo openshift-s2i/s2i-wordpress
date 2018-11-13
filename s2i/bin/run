@@ -128,6 +128,10 @@ RewriteRule . /index.php [L]
 php_value max_execution_time 60
 </IfModule>
 
+<IfModule mod_php7.c>
+php_value max_execution_time 60
+</IfModule>
+
 SetEnv HTTPS on
 EOF
 fi
