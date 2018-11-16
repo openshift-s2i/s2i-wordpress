@@ -105,3 +105,15 @@ items:
         name: bonniernews/s2i-wordpress-php70-49:4.9.8
       importPolicy:
         scheduled: true
+    - name: '4.9.8-1-php-7.0'
+      annotations:
+        description: Build and run Wordpress 4.9.8 (PHP 7.0)
+        tags: builder,wordpress,php
+        supports: wordpress:4.9.8,wordpress
+        version: '4.9.8-1'
+        sampleRepo: https://github.com/BonnierNews/wordpress-quickstart
+      from:
+        kind: DockerImage
+        name: bonniernews/s2i-wordpress-php70-49:4.9.8-1
+      importPolicy:
+        scheduled: true

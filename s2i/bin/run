@@ -10,13 +10,16 @@ if [ ! "$(ls -A /opt/app-root/wp-content)" ]; then
   rsync --stats -rlhO ${WP_BASE_DIR}/wp-content-install/* /opt/app-root/wp-content/
 fi
 
-if [ "$(ls -A /opt/app-root/src/wp-content)" ]; then
-  echo "-> Installing provided user content ..."
-  rsync --stats -rlhOd --itemize-changes --no-times --no-owner --checksum ${WP_BASE_DIR}/wp-content/* /opt/app-root/wp-content/
+if [ "$(ls -A ${WP_BASE_DIR}/wp-content)" ]; then
+  mv ${WP_BASE_DIR}/wp-content ${WP_BASE_DIR}/.wp-content-git
+  echo "-> Installing provided user content..."
+  for i in $(ls -A1 ${WP_BASE_DIR}/.wp-content-git/); do
+    echo "--> Rsyncing $i"
+    rsync --stats -rlhOdH --itemize-changes --no-times --no-owner --size-only ${WP_BASE_DIR}/.wp-content-git/$i /opt/app-root/wp-content/$i &
+  done
 fi
 
 echo "-> Linking './wp-content' to persistent volume ..."
-rm -rf ${WP_BASE_DIR}/wp-content
 ln -sf /opt/app-root/wp-content ${WP_BASE_DIR}/wp-content
 
 # Setup defaults
@@ -130,6 +133,12 @@ php_value max_execution_time 60
 
 <IfModule mod_php7.c>
 php_value max_execution_time 60
+</IfModule>
+
+<IfModule mod_php7.c>
+php_value max_execution_time 60
+php_value realpath_cache_size  4M
+php_value realpath_cache_ttl 300
 </IfModule>
 
 SetEnv HTTPS on
