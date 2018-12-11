@@ -15,7 +15,7 @@ if [ "$(ls -A ${WP_BASE_DIR}/wp-content)" ]; then
   echo "-> Installing provided user content..."
   for i in $(ls -A1 ${WP_BASE_DIR}/.wp-content-git/); do
     echo "--> Rsyncing $i"
-    rsync --stats -rlhOdH --itemize-changes --no-times --no-owner --size-only ${WP_BASE_DIR}/.wp-content-git/$i /opt/app-root/wp-content/$i &
+    rsync --stats -rlhOdH --itemize-changes --no-times --no-owner --size-only ${WP_BASE_DIR}/.wp-content-git/$i/* /opt/app-root/wp-content/$i/ &
   done
 fi
 
