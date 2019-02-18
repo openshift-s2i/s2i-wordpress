@@ -73,6 +73,10 @@ define( 'WP_CACHE', ${WP_CACHE} );
 // Back-end
 define( 'WP_MAX_MEMORY_LIMIT', '${WP_MAX_MEMORY_LIMIT}' );
 //
+/** We created symlink /opt/app-root/wp-content to /opt/app-root/src/wp-content so WP_CONTENT_DIR needs to be /opt/app-root/wp-content instead of /opt/app-root/src/wp-content */
+if ( !defined('WP_CONTENT_DIR') )
+define('WP_CONTENT_DIR', '/opt/app-root/wp-content');
+
 EOF
 
   # multisite support
