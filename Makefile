@@ -2,7 +2,8 @@ BASE_IMAGE_NAME=s2i-wordpress
 NAMESPACE=bonniernews
 # https://wordpress.org/download/release-archive/
 VERSIONS = \
-4.9.8:0945bab959cba127531dceb2c4fed81770812b4f
+4.9.8:0945bab959cba127531dceb2c4fed81770812b4f \
+4.9.9:10678608e8b7f373ca906c8966c09faffe27e5ae
 
 include build/common.mk
 
